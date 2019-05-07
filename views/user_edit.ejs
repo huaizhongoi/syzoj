@@ -20,6 +20,10 @@
 	    	<input type="text" id="realname" name="realname" value="<%= edited_user.realname %>">
 	    </div>
       <div class="field">
+	    	<label for="nameplate">名牌</label>
+	    	<input type="text" id="nameplate" name="nameplate" value="<%= edited_user.nameplate %>"<% if (!user.allowedManage) { %> readonly<% } %>>
+      </div>
+      <div class="field">
 	    	<label for="sex">性别</label>
 	    	<select class="ui dropdown" name="sex">
           <option value="0" <%= edited_user.sex == 0 ? 'selected': '' %>>其它</option>

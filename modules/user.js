@@ -180,6 +180,8 @@ app.post('/user/:id/edit', async (req, res) => {
     if (!syzoj.utils.isValidRealName(req.body.realname.trim())) throw new ErrorMessage('无效的真实姓名。');
     user.realname = req.body.realname.trim();
 
+    if (res.locals.user && await res.locals.user.hasPrivilege('manage_user')) user.nameplate = req.body.nameplate.trim();
+
     if (res.locals.user && res.locals.user.is_admin) {
       if (!req.body.privileges) {
         req.body.privileges = [];
