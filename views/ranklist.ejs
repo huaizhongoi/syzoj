@@ -37,9 +37,18 @@
               ++i;
             %>
             <tr>
-		        	<td><b><%= i %></b></td>
-		        	<td><a href="<%= syzoj.utils.makeUrl(['user', user.id]) %>"><%= user.username %></a><% if (user.nameplate) { %><%- user.nameplate %><% } %></td>
-		        	<td class="font-content">
+              <td><b><%= i %></b></td>
+              <td>
+                <a href="<%= syzoj.utils.makeUrl(['user', user.id]) %>">
+                  <% if (show_realname && user.realname) { %>
+                  <%= user.realname %><div style="font-size: 12px; color: #999; "><%= user.username %></div>
+                  <% } else { %>
+                  <%= user.username %>
+                  <% } %>
+                </a>
+                <% if (user.nameplate) { %><%- user.nameplate %><% } %>
+              </td>
+              <td>
               <script id="user-infomation-script-<%= i %>">
               (function () {
                 var html = <%- serializejs(user.information) %>;

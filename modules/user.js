@@ -20,7 +20,8 @@ app.get('/ranklist', async (req, res) => {
       ranklist: ranklist,
       paginate: paginate,
       curSort: sort,
-      curOrder: order === 'asc'
+      curOrder: order === 'asc',
+      show_realname: res.locals.user && (await res.locals.user.hasPrivilege('see_realname'))
     });
   } catch (e) {
     syzoj.log(e);
@@ -175,6 +176,9 @@ app.post('/user/:id/edit', async (req, res) => {
       user.username = req.body.username;
       user.email = req.body.email;
     }
+
+    if (!syzoj.utils.isValidRealName(req.body.realname.trim())) throw new ErrorMessage('无效的真实姓名。');
+    user.realname = req.body.realname.trim();
 
     if (res.locals.user && res.locals.user.is_admin) {
       if (!req.body.privileges) {

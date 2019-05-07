@@ -270,6 +270,9 @@ module.exports = {
   isValidUsername(s) {
     return RegExp(syzoj.config.username_regex).test(s);
   },
+  isValidRealName(s) {
+    return !s.trim().length || /^[a-zA-Z \u4e00-\u9fa5]+$/.test(s);
+  },
   locks: [],
   lock(key, cb) {
     let s = JSON.stringify(key);

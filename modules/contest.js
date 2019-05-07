@@ -271,7 +271,8 @@ app.get('/contest/:id/ranklist', async (req, res) => {
     res.render('contest_ranklist', {
       contest: contest,
       ranklist: ranklist,
-      problems: problems
+      problems: problems,
+      show_realname: res.locals.user && (await res.locals.user.hasPrivilege('see_realname'))
     });
   } catch (e) {
     syzoj.log(e);

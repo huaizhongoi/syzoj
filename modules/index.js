@@ -47,7 +47,8 @@ app.get('/', async (req, res) => {
       fortune: fortune,
       contests: contests,
       problems: problems,
-      links: syzoj.config.links
+      links: syzoj.config.links,
+      show_realname: res.locals.user && (await res.locals.user.hasPrivilege('see_realname'))
     });
   } catch (e) {
     syzoj.log(e);

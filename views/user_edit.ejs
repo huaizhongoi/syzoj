@@ -14,6 +14,10 @@
       <div class="field">
 	    	<label for="username">用户名</label>
 	    	<input type="text" id="username" name="username" value="<%= edited_user.username %>"<% if (!user.allowedManage) { %> readonly<% } %>>
+      </div>
+      <div class="field">
+	    	<label for="realname">真实姓名</label>
+	    	<input type="text" id="realname" name="realname" value="<%= edited_user.realname %>">
 	    </div>
       <div class="field">
 	    	<label for="sex">性别</label>
@@ -81,9 +85,13 @@
           <input <% if (!allowedManagePrivilege) { %>disabled="disabled" <% } %>type="checkbox"<% if (edited_user.privileges.includes('manage_problem_tag')) { %> checked<% } %>>
           <label>管理题目标签</label>
         </div>
-        <div class="ui toggle <% if (!allowedManagePrivilege) { %>disabled <% } %>checkbox checkbox_privilege" data-name="manage_user">
+        <div class="ui toggle <% if (!allowedManagePrivilege) { %>disabled <% } %>checkbox checkbox_privilege" data-name="manage_user" style="margin-right: 20px; ">
           <input <% if (!allowedManagePrivilege) { %>disabled="disabled" <% } %>type="checkbox"<% if (edited_user.privileges.includes('manage_user')) { %> checked<% } %>>
           <label>管理用户</label>
+        </div>
+        <div class="ui toggle <% if (!allowedManagePrivilege) { %>disabled <% } %>checkbox checkbox_privilege" data-name="see_realname">
+          <input <% if (!allowedManagePrivilege) { %>disabled="disabled" <% } %>type="checkbox"<% if (edited_user.privileges.includes('see_realname')) { %> checked<% } %>>
+          <label>查看实名</label>
         </div>
       </div>
       <div style="text-align: center; margin-top: 30px; ">
