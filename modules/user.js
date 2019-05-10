@@ -113,7 +113,8 @@ app.get('/user/:id', async (req, res) => {
     res.render('user', {
       show_user: user,
       statistics: statistics,
-      ratingHistories: ratingHistories
+      ratingHistories: ratingHistories,
+      show_realname: res.locals.user && (await res.locals.user.hasPrivilege('see_realname'))
     });
   } catch (e) {
     syzoj.log(e);
