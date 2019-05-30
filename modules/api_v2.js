@@ -1,3 +1,6 @@
+const jwt = require('jsonwebtoken');
+const url = require('url');
+
 app.get('/api/v2/search/users/:keyword*?', async (req, res) => {
   try {
     let User = syzoj.model('user');
@@ -104,3 +107,33 @@ app.apiRouter.post('/api/v2/markdown', async (req, res) => {
     res.send(e);
   }
 });
+
+function verifyJWT(token) {
+  try {
+    jwt.verify(token, syzoj.config.session_secret);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+app.apiRouter.get('/api/v2/download/:token', async (req, res) => {
+  try {
+    const token = req.params.token, data = jwt.decode(token);
+    if (!data) throw new ErrorMessage("无效的令牌。");
+    if (url.parse(syzoj.utils.getCurrentLocation(req, true)).href !== url.parse(syzoj.config.site_for_download).href) {
+      throw new ErrorMessage("无效的下载地址。");
+    }
+
+    if (verifyJWT(token)) {
+      res.download(data.filename, data.sendName);
+    } else {
+      res.redirect(data.originUrl);
+    }
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+})
