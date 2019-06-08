@@ -921,6 +921,26 @@ app.get('/problem/:id/statistics/:type', async (req, res) => {
   }
 });
 
+app.post('/problem/:id/group', async (req, res) => {
+  try {
+    let id = parseInt(req.params.id) || 0;
+    let problem = await Problem.findById(id);
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    if (!req.body.new_group) throw new ErrorMessage('不合法的组编号或组名称');
+
+    let newTagIDs = parseInt(req.body.new_group);
+    await problem.setTags(newTagIDs);
+
+    res.redirect(syzoj.utils.makeUrl(['problem', problem.id]));
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
 /*
 app.post('/problem/:id/custom-test', app.multer.fields([{ name: 'code_upload', maxCount: 1 }, { name: 'input_file', maxCount: 1 }]), async (req, res) => {
   try {

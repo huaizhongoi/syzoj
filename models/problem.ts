@@ -523,6 +523,56 @@ export default class Problem extends Model {
     problemTagCache.set(this.id, newTagIDs);
   }
 
+  async getGroups() {
+    let GroupIDs;
+    
+    let maps = await ProblemGroupMap.find({
+      where: {
+        problem_id: this.id
+      }
+    });
+
+    GroupIDs = maps.map(x => x.tag_id);
+
+    let res = await (GroupIDs as any).mapAsync(async GroupID => {
+      return Group.findById(GroupID);
+    });
+
+    res.sort((a, b) => {
+      return a.id > b.id ? 1 : -1;
+    });
+
+    return res;
+  }
+
+  async addGroups(newGroupID) {
+    let oldGroupIDs = (await this.getGroups()).map(x => x.id);
+
+    if (oldGroupIDs.includes(newGroupID)) throw new ErrorMessage('此题目已经属于该题目组。');
+
+    let map = await ProblemGroupMap.create({
+      problem_id: this.id,
+      group_id: newGroupID
+    });
+
+    await map.save();
+  }
+
+  async addGroups(delGroupID) {
+    let oldGroupIDs = (await this.getGroups()).map(x => x.id);
+
+    if (!oldGroupIDs.includes(delGroupID)) throw new ErrorMessage('此题目不属于该题目组。');
+  
+    let map = await ProblemGroupMap.findOne({
+      where: {
+        problem_id: this.id,
+        group_id: delGroupID
+      }
+    });
+
+    await map.destroy();
+  }
+
   async changeID(id) {
     const entityManager = TypeORM.getManager();
 
