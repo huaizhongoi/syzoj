@@ -534,7 +534,7 @@ export default class Problem extends Model {
       }
     });
 
-    GroupIDs = maps.map(x => x.tag_id);
+    GroupIDs = maps.map(x => x.group_id);
 
     let res = await (GroupIDs as any).mapAsync(async GroupID => {
       return Group.findById(GroupID);
