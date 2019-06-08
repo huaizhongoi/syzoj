@@ -12,6 +12,6 @@ export default class UserGroupMap extends Model {
   group_id: number;
 
   @TypeORM.Index()
-  @TypeORM.PrimaryColumn({ type: "integer" })
+  @TypeORM.Column({ type: "integer" })
   level: number;
 }
