@@ -6,6 +6,8 @@ declare var syzoj: any;
 import JudgeState from "./judge_state";
 import UserPrivilege from "./user_privilege";
 import Article from "./article";
+import Group from "./group";
+import UserGroupMap from "./user_group_map";
 
 @TypeORM.Entity()
 export default class User extends Model {
@@ -206,5 +208,81 @@ export default class User extends Model {
     if (a) return a.language;
 
     return null;
+  }
+
+  async getGroupsFull() {
+    let maps = await UserGroupMap.find({
+      where: {
+        user_id: this.id
+      }
+    });
+
+    maps.sort((a, b) => {
+      return a.level < b.level ? 1 : -1;
+    });
+
+    return maps;
+  }
+
+  async getGroups() {
+    let GroupIDs;
+    
+    let maps = await UserGroupMap.find({
+      where: {
+        user_id: this.id
+      }
+    });
+
+    GroupIDs = maps.map(x => x.group_id);
+
+    let res = await (GroupIDs as any).mapAsync(async GroupID => {
+      return Group.findById(GroupID);
+    });
+
+    res.sort((a, b) => {
+      return a.id > b.id ? 1 : -1;
+    });
+
+    return res;
+  }
+
+  async addGroups(newGroupID) {
+    let oldGroupIDs = (await this.getGroups()).map(x => x.id);
+
+    if (oldGroupIDs.includes(newGroupID)) throw new ErrorMessage('此用户已经属于该用户组。');
+
+    let map = await UserGroupMap.create({
+      user_id: this.id,
+      group_id: newGroupID
+    });
+
+    await map.save();
+  }
+
+  async delGroups(delGroupID) {
+    let oldGroupIDs = (await this.getGroups()).map(x => x.id);
+
+    if (!oldGroupIDs.includes(delGroupID)) throw new ErrorMessage('此用户不属于该用户组。');
+  
+    let map = await UserGroupMap.findOne({
+      where: {
+        user_id: this.id,
+        group_id: delGroupID
+      }
+    });
+
+    await map.destroy();
+  }
+
+  async getMaxLevelInProblem(problem) {
+    let usergroup = (await this.getGroupsFull());
+    let problemgroup = (await problem.getGroups());
+
+    for (let groupi of usergroup) {
+      if (problemgroup.includes(groupi.group_id))
+        return groupi.level;
+    }
+    
+    return -1;
   }
 }
