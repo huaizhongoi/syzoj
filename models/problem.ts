@@ -133,10 +133,8 @@ export default class Problem extends Model {
 
   async isAllowedUseBy(user) {
     if (this.is_public) {
-      if (!user) {
-        if (!(await this.getGroups())) return true;
-        else return false;
-      }
+      if (!(await this.getGroups())) return true;
+      if (!user) return false;
       if ((await user.getMaxLevelInProblem(this)) !== -1) return true;
       else return false;
     }
