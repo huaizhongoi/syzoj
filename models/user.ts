@@ -1,7 +1,7 @@
 import * as TypeORM from "typeorm";
 import Model from "./common";
 
-declare var syzoj: any;
+declare var syzoj, ErrorMessage: any;
 
 import JudgeState from "./judge_state";
 import UserPrivilege from "./user_privilege";
@@ -282,7 +282,7 @@ export default class User extends Model {
       if (problemgroup.includes(groupi.group_id))
         return groupi.level;
     }
-    
+
     return -1;
   }
 }
