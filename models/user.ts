@@ -276,7 +276,7 @@ export default class User extends Model {
 
   async getMaxLevelInProblem(problem) {
     let usergroup = (await this.getGroupsFull());
-    let problemgroup = (await problem.getGroups());
+    let problemgroup = (await problem.getGroups()).map(x => x.id);
 
     for (let groupi of usergroup) {
       if (problemgroup.includes(groupi.group_id))
