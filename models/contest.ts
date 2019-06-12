@@ -158,7 +158,7 @@ export default class Contest extends Model {
     
     let maps = await ContestGroupMap.find({
       where: {
-        problem_id: this.id
+        contest_id: this.id
       }
     });
 
