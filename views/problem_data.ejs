@@ -48,8 +48,10 @@ function getIcon(filename) {
           <thead>
             <tr>
               <th class="left aligned">文件名</th>
+              <% if (problem.allowedUseTestdata) { %>
               <th style="width: 100px">文件大小</th>
               <th style="width: 35px">下载</th>
+              <% } %>
               <% if (problem.allowedEdit) { %>
                 <th style="width: 35px">删除</th>
               <% } %>
@@ -59,8 +61,10 @@ function getIcon(filename) {
             <% if (testdata.zip) { %>
             <tr>
               <td class="left aligned"><i class="file archive outline icon"></i> 完整数据包</td>
+              <% if (problem.allowedUseTestdata) { %>
               <td><%- !testdata.zip.size ? '<i class="minus icon"></i>' : syzoj.utils.formatSize(testdata.zip.size) %></td>
               <td><a style="color: #000; " href="<%= syzoj.utils.makeUrl(['problem', problem.id, 'testdata', 'download']) %>"><i class="download icon"></i></td>
+              <% } %>
               <% if (problem.allowedEdit) { %>
                 <td><i class="minus icon"></i></td>
               <% } %>
@@ -71,12 +75,15 @@ function getIcon(filename) {
             <% i++; %>
             <tr>
               <td class="left aligned"><i class="<%= getIcon(file.filename) %> icon"></i> <%= file.filename %></td>
+              
+              <% if (problem.allowedUseTestdata) { %>
               <td><%= syzoj.utils.formatSize(file.size) %></td>
               <td>
                 <a style="color: #000; " href="<%= syzoj.utils.makeUrl(['problem', problem.id, 'testdata', 'download', file.filename]) %>">
                   <i class="download icon"></i>
                 </a>
               </td>
+              <% } %>
               <% if (problem.allowedEdit) { %>
                 <td>
                   <a style="color: #000; " onclick="$('#modal-delete-<%= i %>').modal('show')">
