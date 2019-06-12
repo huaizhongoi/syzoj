@@ -3,6 +3,7 @@ let JudgeState = syzoj.model('judge_state');
 let FormattedCode = syzoj.model('formatted_code');
 let Contest = syzoj.model('contest');
 let ProblemTag = syzoj.model('problem_tag');
+let Group = syzoj.model('group');
 let Article = syzoj.model('article');
 
 const randomstring = require('randomstring');
@@ -30,14 +31,15 @@ app.get('/problems', async (req, res) => {
                 .orWhere('user_id = :user_id', { user_id: res.locals.user.id });
              }))
              .andWhere(new TypeORM.Brackets(qb => {
-                qb.where('(SELECT COUNT(*) FROM problem_group_map WHERE problem_id = id and group_id in (:user_has)) != 0', { user_has: user_has })
-                  .orWhere('(SELECT COUNT(*) FROM problem_group_map WHERE problem_id = id) = 0');
+                qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (:user_has))', { user_has: user_has })
+                  .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
               }));
       } else {
         query.where('is_public = 1')
-             .andWhere('(SELECT COUNT(*) FROM problem_group_map WHERE problem_id = id) = 0');
+             .andWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
       }
     }
+
 
     if (sort === 'ac_rate') {
       query.orderBy('ac_num / submit_num', order.toUpperCase());
@@ -81,6 +83,8 @@ app.get('/problems/search', async (req, res) => {
     let query = Problem.createQueryBuilder();
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
       if (res.locals.user) {
+        let user_have = (await res.locals.user.getGroups()).map(x => x.id);
+        let user_has = await user_have.toString();
         query.where(new TypeORM.Brackets(qb => {
              qb.where('is_public = 1')
                  .orWhere('user_id = :user_id', { user_id: res.locals.user.id })
@@ -88,13 +92,18 @@ app.get('/problems/search', async (req, res) => {
              .andWhere(new TypeORM.Brackets(qb => {
                qb.where('title LIKE :title', { title: `%${req.query.keyword}%` })
                  .orWhere('id = :id', { id: id })
-             }));
+             }))
+             .andWhere(new TypeORM.Brackets(qb => {
+                qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (:user_has))', { user_has: user_has })
+                  .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
+              }));
       } else {
         query.where('is_public = 1')
              .andWhere(new TypeORM.Brackets(qb => {
                qb.where('title LIKE :title', { title: `%${req.query.keyword}%` })
                  .orWhere('id = :id', { id: id })
-             }));
+             }))
+             .andWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
       }
     } else {
       query.where('title LIKE :title', { title: `%${req.query.keyword}%` })
@@ -166,9 +175,14 @@ app.get('/problems/tag/:tagIDs', async (req, res) => {
 
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
       if (res.locals.user) {
+        let user_have = (await res.locals.user.getGroups()).map(x => x.id);
+        let user_has = await user_have.toString();
         sql += 'AND (`problem`.`is_public` = 1 OR `problem`.`user_id` = ' + res.locals.user.id + ')';
+        sql += 'AND (EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))' +
+               'OR NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id))';
       } else {
         sql += 'AND (`problem`.`is_public` = 1)';
+        sql += 'AND NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)';
       }
     }
 
@@ -205,7 +219,7 @@ app.get('/problems/tag/:tagIDs', async (req, res) => {
 app.get('/problems/group/:groupIDs', async (req, res) => {
   try {
     let groupIDs = Array.from(new Set(req.params.groupIDs.split(',').map(x => parseInt(x))));
-    let groups = await groupIDs.mapAsync(async groupID => ProblemGroup.findById(groupID));
+    let groups = await groupIDs.mapAsync(async groupID => Group.findById(groupID));
     const sort = req.query.sort || syzoj.config.sorting.problem.field;
     const order = req.query.order || syzoj.config.sorting.problem.order;
     if (!['id', 'title', 'rating', 'ac_num', 'submit_num', 'ac_rate'].includes(sort) || !['asc', 'desc'].includes(order)) {
@@ -236,9 +250,14 @@ app.get('/problems/group/:groupIDs', async (req, res) => {
 
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
       if (res.locals.user) {
+        let user_have = (await res.locals.user.getGroups()).map(x => x.id);
+        let user_has = await user_have.toString();
         sql += 'AND (`problem`.`is_public` = 1 OR `problem`.`user_id` = ' + res.locals.user.id + ')';
+        sql += 'AND (EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))' +
+               'OR NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id))';
       } else {
         sql += 'AND (`problem`.`is_public` = 1)';
+        sql += 'AND NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)';
       }
     }
 
@@ -251,13 +270,13 @@ app.get('/problems/group/:groupIDs', async (req, res) => {
 
       problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
       problem.judge_state = await problem.getJudgeState(res.locals.user, true);
-      problem.groups = await problem.getGroups();
+      problem.tags = await problem.getTags();
 
       return problem;
     });
 
     res.render('problems', {
-      allowedManageGroup: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_group'),
+      allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
       groups: groups,
       paginate: paginate,

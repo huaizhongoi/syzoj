@@ -128,6 +128,7 @@ export default class Problem extends Model {
   async isAllowedEditBy(user) {
     if (!user) return false;
     if (await user.hasPrivilege('manage_problem')) return true;
+    if (this.is_public && (await user.getMaxLevelInProblem(this)) > 1) return true;
     return this.user_id === user.id;
   }
 
