@@ -31,7 +31,7 @@ app.get('/problems', async (req, res) => {
                 .orWhere('user_id = :user_id', { user_id: res.locals.user.id });
              }))
              .andWhere(new TypeORM.Brackets(qb => {
-                qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (:user_has))', { user_has: user_has })
+                qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))')
                   .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
               }));
       } else {
@@ -94,7 +94,7 @@ app.get('/problems/search', async (req, res) => {
                  .orWhere('id = :id', { id: id })
              }))
              .andWhere(new TypeORM.Brackets(qb => {
-                qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (:user_has))', { user_has: user_has })
+                qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))')
                   .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
               }));
       } else {
