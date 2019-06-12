@@ -133,7 +133,8 @@ app.get('/user/:id', async (req, res) => {
     user.ac_problems = await user.getACProblems();
     user.articles = await user.getArticles();
     user.allowedEdit = await user.isAllowedEditBy(res.locals.user);
-    user.allowedEditGroup = await res.locals.user.hasPrivilege('manage_problem');
+    if (res.locals.user) user.allowedEditGroup = await res.locals.user.hasPrivilege('manage_problem');
+    else user.allowedEditGroup = false;
 
     let statistics = await user.getStatistics();
     await user.renderInformation();
@@ -152,6 +153,8 @@ app.get('/user/:id', async (req, res) => {
 
     for (const history of ratingHistoryValues) {
       const contest = await Contest.findById((await RatingCalculation.findById(history.rating_calculation_id)).contest_id);
+      console.log(history);
+      console.log(contest);
       ratingHistories.push({
         contestName: contest.title,
         value: history.rating_after,
