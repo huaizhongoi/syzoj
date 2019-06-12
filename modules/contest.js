@@ -21,7 +21,7 @@ app.get('/contests', async (req, res) => {
         } else {
           query.where('is_public = 1')
               .andWhere(new TypeORM.Brackets(qb => {
-                  qb.where('EXISTS (SELECT * FROM contest_group_map WHERE group_id = id and group_id in (' + user_has + '))')
+                  qb.where('EXISTS (SELECT * FROM contest_group_map WHERE contest_id = id and group_id in (' + user_has + '))')
                     .orWhere('NOT EXISTS (SELECT * FROM contest_group_map WHERE contest_id = id)');
                 }));
         }
