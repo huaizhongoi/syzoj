@@ -98,6 +98,31 @@ app.get('/api/v2/search/tags/:keyword*?', async (req, res) => {
   }
 });
 
+app.get('/api/v2/search/groups/:keyword*?', async (req, res) => {
+  try {
+    let Problem = syzoj.model('problem');
+    let Group = syzoj.model('group');
+
+    let keyword = req.params.keyword || '';
+    let groups = await Group.find({
+      where: {
+        name: TypeORM.Like(`%${req.params.keyword}%`)
+      },
+      order: {
+        name: 'ASC'
+      }
+    });
+
+    let result = groups.slice(0, syzoj.config.page.edit_problem_tag_list);
+
+    result = result.map(x => ({ name: x.name, value: x.id }));
+    res.send({ success: true, results: result });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({ success: false });
+  }
+});
+
 app.apiRouter.post('/api/v2/markdown', async (req, res) => {
   try {
     let s = await syzoj.utils.markdown(req.body.s.toString(), null, req.body.noReplaceUI === 'true');

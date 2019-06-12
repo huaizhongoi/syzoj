@@ -1,18 +1,38 @@
-<% this.title = '排名' %>
+<%
+if (!show_group) this.title = '排名';
+else this.title = group.name + ' - 排名';
+%>
 <% include header %>
 
 <div class="padding">
-  <form action="<%= syzoj.utils.makeUrl(['find_user']) %>" class="ui mini form" method="get" role="form" style="margin-bottom: 25px; text-align: right; ">
-    <div class="ui action left icon input inline" style="width: 180px; margin-right: 77px; ">
-      <i class="search icon"></i><input name="nickname" placeholder="用户名" type="text">
-      <button class="ui mini button" type="submit">查找用户</button>
+  <% if (show_group) { %>
+  <div class="row">
+    <div class="seven wide column">
+      <% let url = syzoj.utils.makeUrl(['ranklist', 'group', group.id]); %>
+      <a href="<%= url %>" class="ui tiny <%= group.color %> label">
+        <%= group.name %>
+      </a>
     </div>
-  </form>
+    <div class="nine wide right aligned column">
+    <% } %>
+    <form action="<%= syzoj.utils.makeUrl(['find_user']) %>" class="ui mini form" method="get" role="form" style="margin-bottom: 25px; text-align: right; ">
+      <div class="ui action left icon input inline" style="width: 180px; margin-right: 77px; ">
+        <i class="search icon"></i><input name="nickname" placeholder="用户名" type="text">
+        <button class="ui mini button" type="submit">查找用户</button>
+      </div>
+    </form>
+  <% if (show_group) { %>
+  </div>
+  </div>
+  <% } %>
 	    <table class="ui very basic center aligned table" style="table-layout: fixed; ">
 	        <thead>
 	        <tr>
 	            <th style="width: 60px; ">#</th>
-	            <th style="width: 150px; "><%- createSortableTitle('username', '用户名', true) %></th>
+              <th style="width: 150px; "><%- createSortableTitle('username', '用户名', true) %></th>
+              <% if (show_group) { %>
+              <th style="width: 60px; "><%- createSortableTitle('level', '等级', true) %></th>
+              <% } %>
 	            <th>个性签名</th>
 	            <th style="width: 100px; "><%- createSortableTitle('ac_num', '通过数量', false) %></th>
 	            <th style="width: 100px; "><%- createSortableTitle('rating', '积分', false) %></th>
@@ -48,6 +68,9 @@
                 </a>
                 <% if (user.nameplate) { %><%- user.nameplate %><% } %>
               </td>
+              <% if (show_group) { %>
+                <td><%= user.level %></td>
+              <% } %>
               <td>
               <script id="user-infomation-script-<%= i %>">
               (function () {

@@ -112,6 +112,7 @@ if (contest) {
             <a class="small ui button" href="<%= syzoj.utils.makeUrl(['problem', problem.id, 'manage']) %>">管理</a>
           <% } %>
           <% if (problem.allowedManage) { %>
+            <a class="small ui button" href="<%= syzoj.utils.makeUrl(['problem', problem.id, 'group']) %>">题目组</a>
             <% if (problem.is_public) {  %>
               <a class="small ui button" id="dis_public" href-post="<%= syzoj.utils.makeUrl(['problem', problem.id, 'dis_public']) %>">取消公开</a>
             <% } else { %>

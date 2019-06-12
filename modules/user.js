@@ -1,4 +1,5 @@
 let User = syzoj.model('user');
+let Group = syzoj.model('group');
 const RatingCalculation = syzoj.model('rating_calculation');
 const RatingHistory = syzoj.model('rating_history');
 const Contest = syzoj.model('contest');
@@ -21,7 +22,57 @@ app.get('/ranklist', async (req, res) => {
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc',
-      show_realname: res.locals.user && (await res.locals.user.hasPrivilege('see_realname'))
+      show_realname: res.locals.user && (await res.locals.user.hasPrivilege('see_realname')),
+      show_group: false
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.get('/ranklist/group/:gid', async (req, res) => {
+  try {
+    const sort = req.query.sort || syzoj.config.sorting.ranklist.field;
+    const order = req.query.order || syzoj.config.sorting.ranklist.order;
+    let gid = parseInt(req.params.gid);
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let get_group = await Group.findById(gid);
+    if (!get_group) return res.redirect(syzoj.utils.makeUrl(['ranklist']));
+
+    if (!['ac_num', 'rating', 'id', 'username', 'level'].includes(sort) || !['asc', 'desc'].includes(order)) {
+      throw new ErrorMessage('错误的排序参数。');
+    }
+
+    let query = User.createQueryBuilder();
+    query.where('EXISTS (SELECT * FROM user_group_map WHERE user_id = id && group_id = :gid)', { gid: gid })
+         .andWhere('is_show = true');
+    if (sort != 'level') query.orderBy(sort, order.toUpperCase());
+
+    let paginate = syzoj.utils.paginate(await User.countForPagination(query), req.query.page, syzoj.config.page.ranklist);
+    let ranklist = await User.queryPage(paginate, query);
+    await ranklist.forEachAsync(async x => x.renderInformation());
+    await ranklist.forEachAsync(async x => {
+      x.level = await x.getLevelInGroup(gid);
+    });
+    if (sort == 'level') {
+      ranklist.sort((a, b) => {
+        if (order == 'asc') return a.level > b.level ? 1 : -1;
+        else return a.level < b.level ? 1 : -1;
+      });
+    }
+
+    res.render('ranklist', {
+      ranklist: ranklist,
+      paginate: paginate,
+      curSort: sort,
+      curOrder: order === 'asc',
+      show_realname: res.locals.user && (await res.locals.user.hasPrivilege('see_realname')),
+      show_group: true,
+      group: get_group
     });
   } catch (e) {
     syzoj.log(e);
@@ -82,6 +133,7 @@ app.get('/user/:id', async (req, res) => {
     user.ac_problems = await user.getACProblems();
     user.articles = await user.getArticles();
     user.allowedEdit = await user.isAllowedEditBy(res.locals.user);
+    user.allowedEditGroup = await res.locals.user.hasPrivilege('manage_problem');
 
     let statistics = await user.getStatistics();
     await user.renderInformation();
@@ -110,11 +162,23 @@ app.get('/user/:id', async (req, res) => {
     }
     ratingHistories.reverse();
 
+    let Groups = await user.getGroupsFull();
+
+    await Groups.forEachAsync(async map => {
+      group = await Group.findById(map.group_id);
+      map.name = group.name;
+      map.color = group.color;
+    });
+    Groups.sort((a, b) => {
+      return a.group_id > b.group_id ? 1 : -1;
+    });
+
     res.render('user', {
       show_user: user,
       statistics: statistics,
       ratingHistories: ratingHistories,
-      show_realname: res.locals.user && (await res.locals.user.hasPrivilege('see_realname'))
+      show_realname: res.locals.user && (await res.locals.user.hasPrivilege('see_realname')),
+      groups: Groups
     });
   } catch (e) {
     syzoj.log(e);
@@ -217,6 +281,76 @@ app.post('/user/:id/edit', async (req, res) => {
     res.render('user_edit', {
       edited_user: user,
       error_info: e.message
+    });
+  }
+});
+
+app.get('/user/:id/group', async (req, res) => {
+  try {
+    let id = parseInt(req.params.id) || 0;
+    let user = await User.findById(id);
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let Groups = await user.getGroupsFull();
+
+    await Groups.forEachAsync(async map => {
+      group = await Group.findById(map.group_id);
+      map.name = group.name;
+      map.color = group.color;
+    });
+    Groups.sort((a, b) => {
+      return a.group_id > b.group_id ? 1 : -1;
+    });
+
+    res.render('user_group', {
+      groups: Groups,
+      user: user
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.post('/user/:id/group', async (req, res) => {
+  try {
+    let id = parseInt(req.params.id) || 0;
+    let user = await User.findById(id);
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
+    if (!req.body.name) throw new ErrorMessage('不合法的组编号或组名称');
+    if (!req.body.level || isNaN(req.body.level)) throw new ErrorMessage('不合法的等级');
+
+    let name = req.body.name.trim();
+    let level = parseInt(req.body.level);
+
+    if (level != 0 && level != 1 && level != 2) throw new ErrorMessage('不合法的等级');
+
+    await user.addGroups(name, level);
+
+    res.redirect(syzoj.utils.makeUrl(['user', user.id, 'group']));
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.post('/user/:id/group/delete/:gid', async (req, res) => {
+  try {
+    let id = parseInt(req.params.id) || 0;
+    let user = await User.findById(id);
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    await user.delGroups(parseInt(req.params.gid));
+
+    res.redirect(syzoj.utils.makeUrl(['user', user.id, 'group']));
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
     });
   }
 });

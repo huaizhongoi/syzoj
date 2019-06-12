@@ -7,6 +7,8 @@ import User from "./user";
 import Problem from "./problem";
 import ContestRanklist from "./contest_ranklist";
 import ContestPlayer from "./contest_player";
+import ContestGroupMap from "./contest_group_map";
+import Group from "./group";
 
 enum ContestType {
   NOI = "noi",
@@ -69,7 +71,7 @@ export default class Contest extends Model {
   }
 
   async isSupervisior(user) {
-    return user && (user.is_admin || this.holder_id === user.id || this.admins.split('|').includes(user.id.toString()));
+    return user && (user.is_admin || (await user.hasPrivilege('manage_problem')) || this.holder_id === user.id || this.admins.split('|').includes(user.id.toString()));
   }
 
   allowedSeeingOthers() {
@@ -149,5 +151,82 @@ export default class Contest extends Model {
   isEnded(now?) {
     if (!now) now = syzoj.utils.getCurrentDate();
     return now >= this.end_time;
+  }
+
+  async getGroups() {
+    let GroupIDs;
+    
+    let maps = await ContestGroupMap.find({
+      where: {
+        problem_id: this.id
+      }
+    });
+
+    GroupIDs = maps.map(x => x.group_id);
+
+    let res = await (GroupIDs as any).mapAsync(async GroupID => {
+      return Group.findById(GroupID);
+    });
+
+    res.sort((a, b) => {
+      return a.id > b.id ? 1 : -1;
+    });
+
+    return res;
+  }
+
+  async addGroups(newGroupID) {
+    let oldGroupIDs = (await this.getGroups()).map(x => x.name);
+
+    if (oldGroupIDs.includes(newGroupID)) throw new ErrorMessage('此比赛已经属于该比赛组。');
+
+    let pos = await Group.findOne({
+      where: {
+        name: newGroupID
+      }
+    });
+
+    if (!pos) throw new ErrorMessage('不存在此组名称');
+
+    let map = await ContestGroupMap.create({
+      contest_id: this.id,
+      group_id: pos.id
+    });
+
+    await map.save();
+  }
+
+  async delGroups(delGroupID) {
+    let oldGroupIDs = (await this.getGroups()).map(x => x.id);
+
+    if (!oldGroupIDs.includes(delGroupID)) throw new ErrorMessage('此比赛不属于该比赛组。');
+
+    let map = await ContestGroupMap.findOne({
+      where: {
+        contest_id: this.id,
+        group_id: delGroupID
+      }
+    });
+
+    await map.destroy();
+  }
+
+  async isAllowedManageBy(user) {
+    if (!user) return false;
+    if (await user.hasPrivilege('manage_problem')) return true;
+    return await this.isSupervisior(user);
+  }
+
+  async isAllowedUseBy(user) {
+    if (this.is_public) {
+      if ((await this.getGroups()).length == 0) return true;
+      if (!user) return false;
+      if (await this.isSupervisior(user)) return true;
+      if ((await user.getPermissionInContest(this))) return true;
+      else return false;
+    }
+    if (!user) return false;
+    if (await user.hasPrivilege('manage_problem')) return true;
+    return await this.isSupervisior(user);
   }
 }

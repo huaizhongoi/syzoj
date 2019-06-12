@@ -26,14 +26,19 @@ app.get('/problems', async (req, res) => {
       if (res.locals.user) {
         let user_have = (await res.locals.user.getGroups()).map(x => x.id);
         let user_has = await user_have.toString();
-        query.where(new TypeORM.Brackets(qb => {
-                qb.where('is_public = 1')
-                .orWhere('user_id = :user_id', { user_id: res.locals.user.id });
-             }))
-             .andWhere(new TypeORM.Brackets(qb => {
-                qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))')
-                  .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
-              }));
+        if (user_have.length == 0) {
+          query.where('is_public = 1')
+             .andWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
+        } else {
+          query.where(new TypeORM.Brackets(qb => {
+                  qb.where('is_public = 1')
+                  .orWhere('user_id = :user_id', { user_id: res.locals.user.id });
+              }))
+              .andWhere(new TypeORM.Brackets(qb => {
+                  qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))')
+                    .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
+                }));
+        }
       } else {
         query.where('is_public = 1')
              .andWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
@@ -58,6 +63,7 @@ app.get('/problems', async (req, res) => {
 
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
+      allowedManagProblem: res.locals.user && await res.locals.user.hasPrivilege('manage_problem'),
       problems: problems,
       paginate: paginate,
       curSort: sort,
@@ -220,6 +226,8 @@ app.get('/problems/group/:groupIDs', async (req, res) => {
   try {
     let groupIDs = Array.from(new Set(req.params.groupIDs.split(',').map(x => parseInt(x))));
     let groups = await groupIDs.mapAsync(async groupID => Group.findById(groupID));
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
+
     const sort = req.query.sort || syzoj.config.sorting.problem.field;
     const order = req.query.order || syzoj.config.sorting.problem.order;
     if (!['id', 'title', 'rating', 'ac_num', 'submit_num', 'ac_rate'].includes(sort) || !['asc', 'desc'].includes(order)) {
@@ -233,10 +241,12 @@ app.get('/problems/group/:groupIDs', async (req, res) => {
     }
 
     // Validate the groupIDs
+    let cnt = 0;
     for (let group of groups) {
-      if (!group) {
+      if (!group && groupIDs[cnt] != 0) {
         return res.redirect(syzoj.utils.makeUrl(['problems']));
       }
+      ++cnt;
     }
 
     let sql = 'SELECT `id` FROM `problem` WHERE\n';
@@ -245,7 +255,8 @@ app.get('/problems/group/:groupIDs', async (req, res) => {
         sql += 'AND\n';
       }
 
-      sql += '`problem`.`id` IN (SELECT `problem_id` FROM `problem_group_map` WHERE `group_id` = ' + groupID + ')';
+      if (parseInt(groupID) !== 0) sql += '`problem`.`id` IN (SELECT `problem_id` FROM `problem_group_map` WHERE `group_id` = ' + groupID + ')';
+      else sql += 'NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)';
     }
 
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
@@ -770,6 +781,8 @@ app.post('/problem/:id/submit', app.multer.fields([{ name: 'answer', maxCount: 1
     if (contest_id) {
       contest = await Contest.findById(contest_id);
       if (!contest) throw new ErrorMessage('无此比赛。');
+      if (!await contest.isAllowedUseBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
+      if (!contest.is_public && (!res.locals.user || !(await contest.isAllowedManageBy(curUser)))) throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
       if ((!contest.isRunning()) && (!await contest.isSupervisior(curUser))) throw new ErrorMessage('比赛未开始或已结束。');
       let problems_id = await contest.getProblems();
       if (!problems_id.includes(id)) throw new ErrorMessage('无此题目。');
@@ -1023,18 +1036,54 @@ app.get('/problem/:id/statistics/:type', async (req, res) => {
   }
 });
 
-app.post('/problem/:id/group', async (req, res) => {
+app.get('/problem/:id/group', async (req, res) => {
   try {
     let id = parseInt(req.params.id) || 0;
     let problem = await Problem.findById(id);
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
 
-    if (!req.body.new_group) throw new ErrorMessage('不合法的组编号或组名称');
+    let Groups = await problem.getGroups();
 
-    let newTagIDs = parseInt(req.body.new_group);
-    await problem.setTags(newTagIDs);
+    res.render('problem_group', {
+      groups: Groups,
+      problem: problem
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
 
-    res.redirect(syzoj.utils.makeUrl(['problem', problem.id]));
+app.post('/problem/:id/group', async (req, res) => {
+  try {
+    let id = parseInt(req.params.id) || 0;
+    let problem = await Problem.findById(id);
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
+    if (!req.body.name) throw new ErrorMessage('不合法的组编号或组名称');
+
+    let name = req.body.name.trim();
+    await problem.addGroups(name);
+
+    res.redirect(syzoj.utils.makeUrl(['problem', problem.id, 'group']));
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.post('/problem/:id/group/delete/:gid', async (req, res) => {
+  try {
+    let id = parseInt(req.params.id) || 0;
+    let problem = await Problem.findById(id);
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    await problem.delGroups(parseInt(req.params.gid));
+
+    res.redirect(syzoj.utils.makeUrl(['problem', problem.id, 'group']));
   } catch (e) {
     syzoj.log(e);
     res.render('error', {

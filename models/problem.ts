@@ -568,13 +568,21 @@ export default class Problem extends Model {
   }
 
   async addGroups(newGroupID) {
-    let oldGroupIDs = (await this.getGroups()).map(x => x.id);
+    let oldGroupIDs = (await this.getGroups()).map(x => x.name);
 
     if (oldGroupIDs.includes(newGroupID)) throw new ErrorMessage('此题目已经属于该题目组。');
 
+    let pos = await Group.findOne({
+      where: {
+        name: newGroupID
+      }
+    });
+
+    if (!pos) throw new ErrorMessage('不存在此组名称');
+
     let map = await ProblemGroupMap.create({
       problem_id: this.id,
-      group_id: newGroupID
+      group_id: pos.id
     });
 
     await map.save();
@@ -584,7 +592,7 @@ export default class Problem extends Model {
     let oldGroupIDs = (await this.getGroups()).map(x => x.id);
 
     if (!oldGroupIDs.includes(delGroupID)) throw new ErrorMessage('此题目不属于该题目组。');
-  
+
     let map = await ProblemGroupMap.findOne({
       where: {
         problem_id: this.id,

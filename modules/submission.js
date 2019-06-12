@@ -97,6 +97,22 @@ app.get('/submissions', async (req, res) => {
         }
       } else {
         query.andWhere('is_public = true');
+        if (!curUser) {
+          query.andWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = JudgeState.problem_id)');
+          // console.log(query);
+          // throw new ErrorMessage(req.query.problem_id);
+        } else {
+          let user_have = (await curUser.getGroups()).map(x => x.id);
+          let user_has = await user_have.toString();
+          query.andWhere(new TypeORM.Brackets(qb => {
+                  qb.where('is_public = 1')
+                  .orWhere('user_id = :user_id', { user_id: curUser.id });
+              }))
+              .andWhere(new TypeORM.Brackets(qb => {
+                  qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = JudgeState.problem_id and group_id in (' + user_has + '))')
+                    .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = JudgeState.problem_id)');
+                }));
+        }
       }
     } else if (req.query.problem_id) {
       query.andWhere('problem_id = :problem_id', { problem_id: parseInt(req.query.problem_id) || 0 });

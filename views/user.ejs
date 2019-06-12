@@ -35,7 +35,35 @@
                     <a style="float: right; "><i class="star icon"></i>积分 <%= show_user.rating %></a>
                 </div>
             </div>
-
+            <% if (show_user.allowedEditGroup) { %>
+                <table class="ui center aligned celled table">
+                    <thead>
+                        <tr>
+                        <th>名称</th>
+                        <th>等级</th>
+                        </tr>
+                    </thead>
+                    
+                    <tbody>
+                        <% for (let i = 0; i < groups.length; i++) { %>
+                        <tr>
+                            <td>
+                            <a href="/ranklist/group/<%= groups[i].group_id %>" class="ui tiny <%= groups[i].color %> label">
+                                <%= groups[i].name %>
+                            </a>
+                            </td>
+                            <td><%= groups[i].level %></td>
+                        </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+                
+                <div style="text-align: center; ">
+                <a class="ui center aligned vertical segment" style="padding-bottom: 0; " href="/user/<%= show_user.id %>/group">
+                    <button type="submit" class="ui labeled icon button"><i class="ui edit icon"></i>编辑用户组</button>
+                </a>
+                </div>
+            <% } %>
         </div>
         <div class="eleven wide column">
             <div class="ui grid">

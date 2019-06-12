@@ -246,14 +246,23 @@ export default class User extends Model {
     return res;
   }
 
-  async addGroups(newGroupID) {
-    let oldGroupIDs = (await this.getGroups()).map(x => x.id);
+  async addGroups(newGroupID, level) {
+    let oldGroupIDs = (await this.getGroups()).map(x => x.name);
 
-    if (oldGroupIDs.includes(newGroupID)) throw new ErrorMessage('此用户已经属于该用户组。');
+    if (oldGroupIDs.includes(newGroupID)) throw new ErrorMessage('此用户已经属于该题目组。');
+
+    let pos = await Group.findOne({
+      where: {
+        name: newGroupID
+      }
+    });
+
+    if (!pos) throw new ErrorMessage('不存在此组名称');
 
     let map = await UserGroupMap.create({
       user_id: this.id,
-      group_id: newGroupID
+      group_id: pos.id,
+      level: level
     });
 
     await map.save();
@@ -275,7 +284,7 @@ export default class User extends Model {
   }
 
   async getMaxLevelInProblem(problem) {
-    if (await this.hasPrivilege('manage_user')) return 2;
+    if (await this.hasPrivilege('manage_problem')) return 2;
 
     let usergroup = (await this.getGroupsFull());
     let problemgroup = (await problem.getGroups()).map(x => x.id);
@@ -286,5 +295,28 @@ export default class User extends Model {
     }
 
     return -1;
+  }
+
+  async getLevelInGroup(groupID) {
+    let map = await UserGroupMap.findOne({
+      where: {
+        user_id: this.id,
+        group_id: groupID
+      }
+    });
+    return map.level;
+  }
+
+  async getPermissionInContest(contest) {
+    if (await this.hasPrivilege('manage_problem')) return 2;
+
+    let usergroup = (await this.getGroupsFull());
+    let contestgroup = (await contest.getGroups()).map(x => x.id);
+
+    for (let groupi of usergroup) {
+      if (contestgroup.includes(groupi.group_id)) return true;
+    }
+
+    return false;
   }
 }
