@@ -297,7 +297,7 @@ app.get('/user/:id/group', async (req, res) => {
     let Groups = await user.getGroupsFull();
 
     await Groups.forEachAsync(async map => {
-      group = await Group.findById(map.group_id);
+      let group = await Group.findById(map.group_id);
       map.name = group.name;
       map.color = group.color;
     });
