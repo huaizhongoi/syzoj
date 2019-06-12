@@ -21,7 +21,14 @@ if (typeof tags !== 'undefined') tagIDs = tags.map(x => x.id);
                 <%= tag.name %>
               </a>
           <% } %>
-        <% } else { %>
+        <% } else if (typeof group !== 'undefined') { %>
+                <h3>题目组：
+                <% let url = syzoj.utils.makeUrl(['problems', 'group', group.id]); %>
+                <a href="<%= url %>" class="ui tiny <%= group.color %> label">
+                  <%= group.name %>
+                </a>
+              </h3>
+          <% } else { %>
           <form action="<%= syzoj.utils.makeUrl(['problems', 'search']) %>" method="get">
             <div class="ui search" style="width: 280px; height: 28px; margin-top: -5.3px; ">
               <div class="ui left icon input" style="width: 100%; ">
@@ -66,6 +73,13 @@ if (typeof tags !== 'undefined') tagIDs = tags.map(x => x.id);
             <% if (typeof tags !== 'undefined' && tags.length === 1) { %>
               <a style="margin-left: 10px; " href="<%= syzoj.utils.makeUrl(['problems', 'tag', tags[0].id, 'edit']) %>" class="ui labeled icon mini blue button"><i class="write icon"></i> 编辑标签</a>
             <% } %>
+          <% } %>
+          <% if (allowedManagProblem) { %>
+            <% if (typeof group !== 'undefined') { %>
+              <a style="margin-left: 10px; " href="<%= syzoj.utils.makeUrl(['group', group.id, 'edit']) %>" class="ui labeled icon mini blue button"><i class="write icon"></i> 编辑组</a>
+            <% } %>
+          <% } %>
+          <% if (allowedManageTag) { %>
             <a style="margin-left: 10px; " href="<%= syzoj.utils.makeUrl(['problems', 'tag', 0, 'edit']) %>" class="ui labeled icon mini green button"><i class="plus icon"></i> 添加标签</a>
           <% } %>
           <% if (allowedManagProblem) { %>

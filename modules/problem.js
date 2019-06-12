@@ -226,8 +226,8 @@ app.get('/problems/tag/:tagIDs', async (req, res) => {
 
 app.get('/problems/group/:groupIDs', async (req, res) => {
   try {
-    let groupIDs = Array.from(new Set(req.params.groupIDs.split(',').map(x => parseInt(x))));
-    let groups = await groupIDs.mapAsync(async groupID => Group.findById(groupID));
+    let GroupID = parseInt(req.params.groupIDs);
+    let group = await Group.findById(parseInt(req.params.groupIDs));
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
 
     const sort = req.query.sort || syzoj.config.sorting.problem.field;
@@ -243,23 +243,13 @@ app.get('/problems/group/:groupIDs', async (req, res) => {
     }
 
     // Validate the groupIDs
-    let cnt = 0;
-    for (let group of groups) {
-      if (!group && groupIDs[cnt] != 0) {
-        return res.redirect(syzoj.utils.makeUrl(['problems']));
-      }
-      ++cnt;
+    if (!group && GroupID != 0) {
+      return res.redirect(syzoj.utils.makeUrl(['problems']));
     }
 
     let sql = 'SELECT `id` FROM `problem` WHERE\n';
-    for (let groupID of groupIDs) {
-      if (groupID !== groupIDs[0]) {
-        sql += 'AND\n';
-      }
-
-      if (parseInt(groupID) !== 0) sql += '`problem`.`id` IN (SELECT `problem_id` FROM `problem_group_map` WHERE `group_id` = ' + groupID + ')';
-      else sql += 'NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)';
-    }
+    if (GroupID !== 0) sql += '`problem`.`id` IN (SELECT `problem_id` FROM `problem_group_map` WHERE `group_id` = ' + GroupID + ')';
+    else sql += 'NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)';
 
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
       if (res.locals.user) {
@@ -292,7 +282,7 @@ app.get('/problems/group/:groupIDs', async (req, res) => {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       allowedManagProblem: res.locals.user && await res.locals.user.hasPrivilege('manage_problem'),
       problems: problems,
-      groups: groups,
+      group: group,
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc'
