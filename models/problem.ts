@@ -143,6 +143,18 @@ export default class Problem extends Model {
     return this.user_id === user.id;
   }
 
+  async isAllowedUseTestdataBy(user) {
+    if (this.is_public) {
+      if ((await this.getGroups()).length == 0) return true;
+      if (!user) return false;
+      if ((await user.getMaxLevelInProblem(this)) > 0) return true;
+      else return false;
+    }
+    if (!user) return false;
+    if (await user.hasPrivilege('manage_problem')) return true;
+    return this.user_id === user.id;
+  }
+
   async isAllowedManageBy(user) {
     if (!user) return false;
     if (await user.hasPrivilege('manage_problem')) return true;

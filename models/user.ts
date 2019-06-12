@@ -275,6 +275,8 @@ export default class User extends Model {
   }
 
   async getMaxLevelInProblem(problem) {
+    if (await this.hasPrivilege('manage_user')) return 2;
+
     let usergroup = (await this.getGroupsFull());
     let problemgroup = (await problem.getGroups()).map(x => x.id);
 

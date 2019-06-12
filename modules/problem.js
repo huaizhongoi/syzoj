@@ -23,10 +23,19 @@ app.get('/problems', async (req, res) => {
     let query = Problem.createQueryBuilder();
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
       if (res.locals.user) {
-        query.where('is_public = 1')
-             .orWhere('user_id = :user_id', { user_id: res.locals.user.id });
+        let user_have = (await res.locals.user.getGroups()).map(x => x.id);
+        let user_has = await user_have.toString();
+        query.where(new TypeORM.Brackets(qb => {
+                qb.where('is_public = 1')
+                .orWhere('user_id = :user_id', { user_id: res.locals.user.id });
+             }))
+             .andWhere(new TypeORM.Brackets(qb => {
+                qb.where('(SELECT COUNT(*) FROM problem_group_map WHERE problem_id = id and group_id in (:user_has)) != 0', { user_has: user_has })
+                  .orWhere('(SELECT COUNT(*) FROM problem_group_map WHERE problem_id = id) = 0');
+              }));
       } else {
-        query.where('is_public = 1');
+        query.where('is_public = 1')
+             .andWhere('(SELECT COUNT(*) FROM problem_group_map WHERE problem_id = id) = 0');
       }
     }
 
@@ -181,6 +190,76 @@ app.get('/problems/tag/:tagIDs', async (req, res) => {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
       tags: tags,
+      paginate: paginate,
+      curSort: sort,
+      curOrder: order === 'asc'
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.get('/problems/group/:groupIDs', async (req, res) => {
+  try {
+    let groupIDs = Array.from(new Set(req.params.groupIDs.split(',').map(x => parseInt(x))));
+    let groups = await groupIDs.mapAsync(async groupID => ProblemGroup.findById(groupID));
+    const sort = req.query.sort || syzoj.config.sorting.problem.field;
+    const order = req.query.order || syzoj.config.sorting.problem.order;
+    if (!['id', 'title', 'rating', 'ac_num', 'submit_num', 'ac_rate'].includes(sort) || !['asc', 'desc'].includes(order)) {
+      throw new ErrorMessage('错误的排序参数。');
+    }
+    let sortVal;
+    if (sort === 'ac_rate') {
+      sortVal = '`problem`.`ac_num` / `problem`.`submit_num`';
+    } else {
+      sortVal = '`problem`.`' + sort + '`';
+    }
+
+    // Validate the groupIDs
+    for (let group of groups) {
+      if (!group) {
+        return res.redirect(syzoj.utils.makeUrl(['problems']));
+      }
+    }
+
+    let sql = 'SELECT `id` FROM `problem` WHERE\n';
+    for (let groupID of groupIDs) {
+      if (groupID !== groupIDs[0]) {
+        sql += 'AND\n';
+      }
+
+      sql += '`problem`.`id` IN (SELECT `problem_id` FROM `problem_group_map` WHERE `group_id` = ' + groupID + ')';
+    }
+
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
+      if (res.locals.user) {
+        sql += 'AND (`problem`.`is_public` = 1 OR `problem`.`user_id` = ' + res.locals.user.id + ')';
+      } else {
+        sql += 'AND (`problem`.`is_public` = 1)';
+      }
+    }
+
+    let paginate = syzoj.utils.paginate(await Problem.countQuery(sql), req.query.page, syzoj.config.page.problem);
+    let problems = await Problem.query(sql + ` ORDER BY ${sortVal} ${order} ` + paginate.toSQL());
+
+    problems = await problems.mapAsync(async problem => {
+      // query() returns plain objects.
+      problem = await Problem.findById(problem.id);
+
+      problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
+      problem.judge_state = await problem.getJudgeState(res.locals.user, true);
+      problem.groups = await problem.getGroups();
+
+      return problem;
+    });
+
+    res.render('problems', {
+      allowedManageGroup: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_group'),
+      problems: problems,
+      groups: groups,
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc'
@@ -757,7 +836,7 @@ app.get('/problem/:id/testdata', async (req, res) => {
     let problem = await Problem.findById(id);
 
     if (!problem) throw new ErrorMessage('无此题目。');
-    if (!await problem.isAllowedUseBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
+    if (!await problem.isAllowedUseTestdataBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
 
     let testdata = await problem.listTestdata();
     let testcases = await syzoj.utils.parseTestdata(problem.getTestdataPath(), problem.type === 'submit-answer');
