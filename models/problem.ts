@@ -136,6 +136,7 @@ export default class Problem extends Model {
     if (this.is_public) {
       if ((await this.getGroups()).length == 0) return true;
       if (!user) return false;
+      if (this.user_id === user.id) return true;
       if ((await user.getMaxLevelInProblem(this)) !== -1) return true;
       else return false;
     }
@@ -148,6 +149,7 @@ export default class Problem extends Model {
     if (this.is_public) {
       if ((await this.getGroups()).length == 0) return true;
       if (!user) return false;
+      if (this.user_id === user.id) return true;
       if ((await user.getMaxLevelInProblem(this)) > 0) return true;
       else return false;
     }
