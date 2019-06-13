@@ -106,13 +106,11 @@ app.get('/submissions', async (req, res) => {
         } else {
           let user_have = (await curUser.getGroups()).map(x => x.id);
           let user_has = await user_have.toString();
-          query.andWhere(new TypeORM.Brackets(qb => {
-                  qb.where('is_public = 1')
-                  .orWhere('EXISTS (SELECT * FROM problem WHERE id = problem_id and user_id = :user_id)', { user_id: curUser.id });
-              }))
-              .andWhere(new TypeORM.Brackets(qb => {
+          query.where('is_public = 1')
+               .andWhere(new TypeORM.Brackets(qb => {
                   qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = JudgeState.problem_id and group_id in (' + user_has + '))')
-                    .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = JudgeState.problem_id)');
+                    .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = JudgeState.problem_id)')
+                    .orWhere('EXISTS (SELECT * FROM problem WHERE id = problem_id and user_id = :user_id)', { user_id: curUser.id });
                 }));
         }
       }
