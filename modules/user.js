@@ -292,6 +292,7 @@ app.get('/user/:id/group', async (req, res) => {
   try {
     let id = parseInt(req.params.id) || 0;
     let user = await User.findById(id);
+    if (!user) throw new ErrorMessage('无此用户。');
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
 
     let Groups = await user.getGroupsFull();
@@ -321,6 +322,7 @@ app.post('/user/:id/group', async (req, res) => {
   try {
     let id = parseInt(req.params.id) || 0;
     let user = await User.findById(id);
+    if (!user) throw new ErrorMessage('无此用户。');
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
     if (!req.body.name) throw new ErrorMessage('不合法的组编号或组名称');
     if (!req.body.level || isNaN(req.body.level)) throw new ErrorMessage('不合法的等级');
@@ -345,6 +347,7 @@ app.post('/user/:id/group/delete/:gid', async (req, res) => {
   try {
     let id = parseInt(req.params.id) || 0;
     let user = await User.findById(id);
+    if (!user) throw new ErrorMessage('无此用户。');
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
 
     await user.delGroups(parseInt(req.params.gid));
