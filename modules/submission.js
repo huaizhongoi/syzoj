@@ -106,7 +106,7 @@ app.get('/submissions', async (req, res) => {
         } else {
           let user_have = (await curUser.getGroups()).map(x => x.id);
           let user_has = await user_have.toString();
-          query.where('is_public = 1')
+          query.andWhere('is_public = 1')
                .andWhere(new TypeORM.Brackets(qb => {
                   qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = JudgeState.problem_id and group_id in (' + user_has + '))')
                     .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = JudgeState.problem_id)')
