@@ -27,17 +27,20 @@ app.get('/problems', async (req, res) => {
         let user_have = (await res.locals.user.getGroups()).map(x => x.id);
         let user_has = await user_have.toString();
         if (user_have.length == 0) {
-          query.where('is_public = 1')
-             .andWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
-        } else {
           query.where(new TypeORM.Brackets(qb => {
-                  qb.where('is_public = 1')
-                  .orWhere('user_id = :user_id', { user_id: res.locals.user.id });
-              }))
+            qb.where('is_public = 1')
+              .andWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
+          })).
+          orWhere('user_id = :user_id', { user_id: res.locals.user.id });
+        } else {
+          query.where(new TypeORM.Brackets(qq => {
+            qq.where('is_public = 1')
               .andWhere(new TypeORM.Brackets(qb => {
                   qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))')
                     .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
                 }));
+          })).
+          orWhere('user_id = :user_id', { user_id: res.locals.user.id });
         }
       } else {
         query.where('is_public = 1')
@@ -93,7 +96,7 @@ app.get('/problems/search', async (req, res) => {
         let user_has = await user_have.toString();
         query.where(new TypeORM.Brackets(qb => {
              qb.where('is_public = 1')
-                 .orWhere('user_id = :user_id', { user_id: res.locals.user.id })
+                 .orWhere('user_id = :user_id', { user_id: res.locals.user.id });
              }))
              .andWhere(new TypeORM.Brackets(qb => {
                qb.where('title LIKE :title', { title: `%${req.query.keyword}%` })
@@ -101,7 +104,8 @@ app.get('/problems/search', async (req, res) => {
              }))
              .andWhere(new TypeORM.Brackets(qb => {
                 qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))')
-                  .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
+                  .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)')
+                  .orWhere('user_id = :user_id', { user_id: res.locals.user.id })
               }));
       } else {
         query.where('is_public = 1')
@@ -109,7 +113,10 @@ app.get('/problems/search', async (req, res) => {
                qb.where('title LIKE :title', { title: `%${req.query.keyword}%` })
                  .orWhere('id = :id', { id: id })
              }))
-             .andWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
+             .andWhere(new TypeORM.Brackets(qb => {
+                qb.orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)')
+                  .orWhere('user_id = :user_id', { user_id: res.locals.user.id })
+            }));
       }
     } else {
       query.where('title LIKE :title', { title: `%${req.query.keyword}%` })
