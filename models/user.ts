@@ -249,7 +249,20 @@ export default class User extends Model {
   async addGroups(newGroupID, level) {
     let oldGroupIDs = (await this.getGroups()).map(x => x.name);
 
-    if (oldGroupIDs.includes(newGroupID)) throw new ErrorMessage('此用户已经属于该题目组。');
+    if (oldGroupIDs.includes(newGroupID)) {
+      let pos = await Group.findOne({
+        where: {
+          name: newGroupID
+        }
+      });
+      let map = await UserGroupMap.findOne({
+        user_id: this.id,
+        group_id: pos.id
+      });
+      map.level = level;
+      await map.save();
+      return;
+    }
 
     let pos = await Group.findOne({
       where: {
