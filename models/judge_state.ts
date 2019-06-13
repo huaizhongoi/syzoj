@@ -121,8 +121,29 @@ export default class JudgeState extends Model {
     else if (this.type === 0) return this.problem.isAllowedUseBy(user);
     else if (this.type === 1) {
       let contest = await Contest.findById(this.type_info);
+      if (!contest) throw new ErrorMessage('无此比赛。');
+      if (!await contest.isAllowedUseBy(user)) throw new ErrorMessage('您没有权限进行此操作。');
+      if (!contest.is_public && (!user || !(await contest.isAllowedManageBy(user)))) throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
       if (contest.isRunning()) {
-        return user && await contest.isSupervisior(user);
+        return user && await contest.isAllowedManageBy(user);
+      } else {
+        return true;
+      }
+    }
+  }
+
+  async isAllowRejudgeBy(user) {
+    await this.loadRelationships();
+
+    if (user && user.id === this.problem.user_id) return true;
+    else if (this.type === 0) return this.problem.isAllowedEditBy(user);
+    else if (this.type === 1) {
+      let contest = await Contest.findById(this.type_info);
+      if (!contest) throw new ErrorMessage('无此比赛。');
+      if (!await contest.isAllowedManageBy(user)) throw new ErrorMessage('您没有权限进行此操作。');
+      if (!contest.is_public && (!user || !(await contest.isAllowedManageBy(user)))) throw new ErrorMessage('您没有权限进行此操作。');
+      if (contest.isRunning()) {
+        return user && await contest.isAllowedManageBy(user);
       } else {
         return true;
       }

@@ -43,9 +43,13 @@ app.get('/submissions', async (req, res) => {
     } else {
       const contestId = Number(req.query.contest);
       const contest = await Contest.findById(contestId);
+      if (!contest) throw new ErrorMessage('无此比赛。');
+      if (!await contest.isAllowedUseBy(curUser)) throw new ErrorMessage('您没有权限进行此操作。');
+      if (!contest.is_public && (!res.locals.user || !(await contest.isAllowedManageBy(curUser)))) throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
+
       contest.ended = contest.isEnded();
       if ((contest.ended && contest.is_public) || // If the contest is ended and is not hidden
-        (curUser && await contest.isSupervisior(curUser)) // Or if the user have the permission to check
+        (curUser && await contest.isAllowedManageBy(curUser)) // Or if the user have the permission to check
       ) {
         query.andWhere('type = 1');
         query.andWhere('type_info = :type_info', { type_info: contestId });
@@ -106,7 +110,7 @@ app.get('/submissions', async (req, res) => {
           let user_has = await user_have.toString();
           query.andWhere(new TypeORM.Brackets(qb => {
                   qb.where('is_public = 1')
-                  .orWhere('user_id = :user_id', { user_id: curUser.id });
+                  .orWhere('EXISTS (SELECT * FROM problem WHERE problem_id = JudgeState.problem_id and user_id = :user_id)', { user_id: curUser.id });
               }))
               .andWhere(new TypeORM.Brackets(qb => {
                   qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = JudgeState.problem_id and group_id in (' + user_has + '))')
@@ -204,7 +208,7 @@ app.get('/submission/:id', async (req, res) => {
       judge.code = await syzoj.utils.highlight(judge.code, syzoj.languages[judge.language].highlight);
     }
 
-    displayConfig.showRejudge = await judge.problem.isAllowedEditBy(res.locals.user);
+    displayConfig.showRejudge = await judge.isAllowRejudgeBy(res.locals.user);
     res.render('submission', {
       info: getSubmissionInfo(judge, displayConfig),
       roughResult: getRoughResult(judge, displayConfig, false),
@@ -237,7 +241,7 @@ app.post('/submission/:id/rejudge', async (req, res) => {
     await judge.loadRelationships();
 
     let allowedRejudge = await judge.problem.isAllowedEditBy(res.locals.user);
-    if (!allowedRejudge) throw new ErrorMessage('您没有权限进行此操作。');
+    if (!judge.isAllowRejudgeBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
 
     await judge.rejudge();
 
