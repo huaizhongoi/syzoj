@@ -40,7 +40,8 @@ app.get('/contests', async (req, res) => {
 
     res.render('contests', {
       contests: contests,
-      paginate: paginate
+      paginate: paginate,
+      allowedManagProblem: res.locals.user && await res.locals.user.hasPrivilege('manage_problem')
     })
   } catch (e) {
     syzoj.log(e);
