@@ -1033,6 +1033,7 @@ app.get('/problem/:id/group', async (req, res) => {
   try {
     let id = parseInt(req.params.id) || 0;
     let problem = await Problem.findById(id);
+    if (!problem) throw new ErrorMessage('无此题目。');
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
 
     let Groups = await problem.getGroups();
@@ -1053,6 +1054,7 @@ app.post('/problem/:id/group', async (req, res) => {
   try {
     let id = parseInt(req.params.id) || 0;
     let problem = await Problem.findById(id);
+    if (!problem) throw new ErrorMessage('无此题目。');
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
     if (!req.body.name) throw new ErrorMessage('不合法的组编号或组名称');
 
@@ -1072,6 +1074,7 @@ app.post('/problem/:id/group/delete/:gid', async (req, res) => {
   try {
     let id = parseInt(req.params.id) || 0;
     let problem = await Problem.findById(id);
+    if (!problem) throw new ErrorMessage('无此题目。');
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
 
     await problem.delGroups(parseInt(req.params.gid));
