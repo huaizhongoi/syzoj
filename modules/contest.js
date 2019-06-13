@@ -326,8 +326,8 @@ app.get('/contest/:id/submissions', async (req, res) => {
     const curUser = res.locals.user;
 
     if (!contest) throw new ErrorMessage('无此比赛。');
-    if (!await contest.isAllowedUseBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
-    if (!contest.is_public && (!res.locals.user || !(await contest.isAllowedManageBy(curUser)))) throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
+    if (!await contest.isAllowedUseBy(curUser)) throw new ErrorMessage('您没有权限进行此操作。');
+    if (!contest.is_public && (!curUser || !(await contest.isAllowedManageBy(curUser)))) throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
 
     if (contest.isEnded()) {
       res.redirect(syzoj.utils.makeUrl(['submissions'], { contest: contest_id }));
@@ -455,14 +455,18 @@ app.get('/contest/submission/:id', async (req, res) => {
     const judge = await JudgeState.findById(id);
     if (!judge) throw new ErrorMessage("提交记录 ID 不正确。");
     const curUser = res.locals.user;
-    if ((!curUser) || judge.user_id !== curUser.id) throw new ErrorMessage("您没有权限执行此操作。");
+    const contest = await Contest.findById(judge.type_info);
+    contest.ended = contest.isEnded();
+
+    if (!contest) throw new ErrorMessage('无此比赛。');
+    if (!await contest.isAllowedUseBy(curUser)) throw new ErrorMessage('您没有权限进行此操作。');
+    if (!contest.is_public && (!curUser || !(await contest.isAllowedManageBy(curUser)))) throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
+
+    if ((!curUser) || (judge.user_id !== curUser.id && !(await contest.isAllowedManageBy(curUser)))) throw new ErrorMessage("您没有权限执行此操作。");
 
     if (judge.type !== 1) {
       return res.redirect(syzoj.utils.makeUrl(['submission', id]));
     }
-
-    const contest = await Contest.findById(judge.type_info);
-    contest.ended = contest.isEnded();
 
     const displayConfig = getDisplayConfig(contest);
     displayConfig.showCode = true;
