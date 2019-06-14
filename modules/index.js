@@ -34,7 +34,7 @@ app.get('/', async (req, res) => {
     });
 
     let sql = 'SELECT * FROM `problem` WHERE\n';
-    sql += '`problem`.`is_public` = 1';
+    sql += '`problem`.`is_public` = 1 ';
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
       if (res.locals.user) {
         let user_have = (await res.locals.user.getGroups()).map(x => x.id);
