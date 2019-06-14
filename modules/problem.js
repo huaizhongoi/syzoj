@@ -258,19 +258,6 @@ app.get('/problems/group/:groupIDs', async (req, res) => {
     if (GroupID !== 0) sql += '`problem`.`id` IN (SELECT `problem_id` FROM `problem_group_map` WHERE `group_id` = ' + GroupID + ')';
     else sql += 'NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)';
 
-    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
-      if (res.locals.user) {
-        let user_have = (await res.locals.user.getGroups()).map(x => x.id);
-        let user_has = await user_have.toString();
-        sql += 'AND (`problem`.`is_public` = 1 OR `problem`.`user_id` = ' + res.locals.user.id + ')';
-        sql += 'AND (EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))' +
-               'OR NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id))';
-      } else {
-        sql += 'AND (`problem`.`is_public` = 1)';
-        sql += 'AND NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)';
-      }
-    }
-
     let paginate = syzoj.utils.paginate(await Problem.countQuery(sql), req.query.page, syzoj.config.page.problem);
     let problems = await Problem.query(sql + ` ORDER BY ${sortVal} ${order} ` + paginate.toSQL());
 

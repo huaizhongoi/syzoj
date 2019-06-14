@@ -6,23 +6,25 @@ else this.title = group.name + ' - 排名';
 
 <div class="padding">
   <% if (show_group) { %>
-  <div class="row">
-    <div class="seven wide column">
-      <% let url = syzoj.utils.makeUrl(['ranklist', 'group', group.id]); %>
-      <a href="<%= url %>" class="ui tiny <%= group.color %> label">
-        <%= group.name %>
-      </a>
-    </div>
-    <div class="nine wide right aligned column">
-    <% } %>
-    <form action="<%= syzoj.utils.makeUrl(['find_user']) %>" class="ui mini form" method="get" role="form" style="margin-bottom: 25px; text-align: right; ">
-      <div class="ui action left icon input inline" style="width: 180px; margin-right: 77px; ">
-        <i class="search icon"></i><input name="nickname" placeholder="用户名" type="text">
-        <button class="ui mini button" type="submit">查找用户</button>
+  <div class="ui grid" style="margin-bottom: 10px; ">
+    <div class="row">
+      <div class="seven wide column">
+        <% let url = syzoj.utils.makeUrl(['ranklist', 'group', group.id]); %>
+        <a href="<%= url %>" class="ui tiny <%= group.color %> label">
+          <%= group.name %>
+        </a>
       </div>
-    </form>
+      <div class="nine wide right aligned column">
+  <% } %>
+        <form action="<%= syzoj.utils.makeUrl(['find_user']) %>" class="ui mini form" method="get" role="form" style="margin-bottom: 25px; text-align: right; ">
+          <div class="ui action left icon input inline" style="width: 180px; margin-right: 77px; ">
+            <i class="search icon"></i><input name="nickname" placeholder="用户名" type="text">
+            <button class="ui mini button" type="submit">查找用户</button>
+          </div>
+        </form>
   <% if (show_group) { %>
-  </div>
+      </div>
+    </div>
   </div>
   <% } %>
 	    <table class="ui very basic center aligned table" style="table-layout: fixed; ">

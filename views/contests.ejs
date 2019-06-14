@@ -3,14 +3,30 @@
 <div class="padding">
     <% if (contests.length) { %>
     <% if (allowedManagProblem) { %>
-    <form class="ui mini form">
-      <div class="inline fields" style="margin-bottom: 25px; white-space: nowrap; ">
-        <a href="<%= syzoj.utils.makeUrl(['contest', 0, 'edit']) %>" class="ui mini labeled icon right floated button" style="margin-left: auto; ">
-          <i class="ui icon write"></i>
-          添加比赛
-        </a>
-     </div>
-    </form>
+    <% if (typeof group != 'undefined') { %>
+      <div class="ui grid" style="margin-bottom: 10px; ">
+        <div class="row" style="white-space: nowrap; ">
+          <div class="seven wide column">
+            <% let url = syzoj.utils.makeUrl(['ranklist', 'group', group.id]); %>
+            <a href="<%= url %>" class="ui tiny <%= group.color %> label">
+              <%= group.name %>
+            </a>
+          </div>
+        <div class="nine wide right aligned column">
+    <% } %>
+          <form class="ui mini form">
+            <div class="inline fields" style="margin-bottom: 25px; white-space: nowrap; ">
+              <a href="<%= syzoj.utils.makeUrl(['contest', 0, 'edit']) %>" class="ui mini labeled icon right floated button" style="margin-left: auto; ">
+                <i class="ui icon write"></i>
+                添加比赛
+              </a>
+            </div>
+          </form>
+    <% if (typeof group != 'undefined') { %>
+        </div>
+      </div>
+    </div>
+    <% } %>
     <% } %>
     <table class="ui very basic center aligned table">
       <thead>
@@ -45,6 +61,19 @@
       </tbody>
     </table>
     <% } else { %>
+    <% if (typeof group != 'undefined') { %>
+      <div class="ui grid" style="margin-bottom: 10px; ">
+        <div class="row" style="white-space: nowrap; ">
+          <div class="seven wide column">
+            <% let url = syzoj.utils.makeUrl(['ranklist', 'group', group.id]); %>
+            <a href="<%= url %>" class="ui tiny <%= group.color %> label">
+              <%= group.name %>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% } %>
     <div class="ui placeholder segment">
       <div class="ui icon header">
         <i class="calendar icon" style="margin-bottom: 20px; "></i>

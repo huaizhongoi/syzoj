@@ -4,6 +4,7 @@ let ContestPlayer = syzoj.model('contest_player');
 let Problem = syzoj.model('problem');
 let JudgeState = syzoj.model('judge_state');
 let User = syzoj.model('user');
+let Group = syzoj.model('group');
 
 const jwt = require('jsonwebtoken');
 const { getSubmissionInfo, getRoughResult, processOverallResult } = require('../libs/submissions_process');
@@ -42,6 +43,42 @@ app.get('/contests', async (req, res) => {
       contests: contests,
       paginate: paginate,
       allowedManagProblem: res.locals.user && await res.locals.user.hasPrivilege('manage_problem')
+    })
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.get('/contests/group/:groupIDs', async (req, res) => {
+  try {
+    let GroupID = parseInt(req.params.groupIDs);
+    let group = await Group.findById(parseInt(req.params.groupIDs));
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    // Validate the groupIDs
+    if (!group && GroupID != 0) {
+      return res.redirect(syzoj.utils.makeUrl(['contests']));
+    }
+
+    let sql = 'SELECT * FROM `contest` WHERE\n';
+    if (GroupID !== 0) sql += '`contest`.`id` IN (SELECT `contest_id` FROM `contest_group_map` WHERE `group_id` = ' + GroupID + ')';
+    else sql += 'NOT EXISTS (SELECT * FROM contest_group_map WHERE contest_id = `id`)';
+
+    sql += 'ORDER BY start_time DESC';
+
+    let paginate = syzoj.utils.paginate(await Contest.countQuery(sql), req.query.page, syzoj.config.page.contest);
+    let contests = await Contest.query(sql + paginate.toSQL());
+
+    await contests.forEachAsync(async x => x.subtitle = await syzoj.utils.markdown(x.subtitle));
+
+    res.render('contests', {
+      contests: contests,
+      paginate: paginate,
+      allowedManagProblem: res.locals.user && await res.locals.user.hasPrivilege('manage_problem'),
+      group: group
     })
   } catch (e) {
     syzoj.log(e);
