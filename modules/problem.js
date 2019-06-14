@@ -36,8 +36,10 @@ app.get('/problems', async (req, res) => {
           query.where(new TypeORM.Brackets(qq => {
             qq.where('is_public = 1')
               .andWhere(new TypeORM.Brackets(qb => {
-                  qb.where('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))')
-                    .orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
+                  user_have.forEach((item, index, arr)=> {
+                    qb.andWhere('EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id = :group_id)', { group_id: item });
+                  });
+                  qb.orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
                 }));
           })).
           orWhere('user_id = :user_id', { user_id: res.locals.user.id });
@@ -49,6 +51,7 @@ app.get('/problems', async (req, res) => {
     }
 
 
+
     if (sort === 'ac_rate') {
       query.orderBy('ac_num / submit_num', order.toUpperCase());
     } else {
@@ -57,6 +60,7 @@ app.get('/problems', async (req, res) => {
 
     let paginate = syzoj.utils.paginate(await Problem.countForPagination(query), req.query.page, syzoj.config.page.problem);
     let problems = await Problem.queryPage(paginate, query);
+
 
     await problems.forEachAsync(async problem => {
       problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
