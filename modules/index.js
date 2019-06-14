@@ -33,9 +33,20 @@ app.get('/', async (req, res) => {
       start_time: 'DESC'
     });
 
-    let problems = (await Problem.queryRange([1, 5], { is_public: true }, {
-      publicize_time: 'DESC'
-    })).map(problem => ({
+    let sql = 'SELECT * FROM `problem` WHERE\n';
+    sql += '`problem`.`is_public` = 1';
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
+      if (res.locals.user) {
+        let user_have = (await res.locals.user.getGroups()).map(x => x.id);
+        let user_has = await user_have.toString();
+        sql += 'AND (EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))' +
+               'OR NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id))';
+      } else {
+        sql += 'AND NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)';
+      }
+    }
+
+    let problems = (await Problem.query(sql + ` ORDER BY publicize_time DESC` + ` LIMIT 5`)).map(problem => ({
       id: problem.id,
       title: problem.title,
       time: timeAgo.format(new Date(problem.publicize_time)),
