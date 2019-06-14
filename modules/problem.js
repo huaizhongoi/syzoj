@@ -134,7 +134,7 @@ app.get('/problems/search', async (req, res) => {
     let problems = await Problem.queryPage(paginate, query);
 
     await problems.forEachAsync(async problem => {
-      problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
+      // problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
       problem.judge_state = await problem.getJudgeState(res.locals.user, true);
       problem.tags = await problem.getTags();
     });
@@ -207,7 +207,7 @@ app.get('/problems/tag/:tagIDs', async (req, res) => {
       // query() returns plain objects.
       problem = await Problem.findById(problem.id);
 
-      problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
+      // problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
       problem.judge_state = await problem.getJudgeState(res.locals.user, true);
       problem.tags = await problem.getTags();
 
@@ -278,7 +278,7 @@ app.get('/problems/group/:groupIDs', async (req, res) => {
       // query() returns plain objects.
       problem = await Problem.findById(problem.id);
 
-      problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
+      // problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
       problem.judge_state = await problem.getJudgeState(res.locals.user, true);
       problem.tags = await problem.getTags();
 
