@@ -39,6 +39,7 @@ app.get('/', async (req, res) => {
       if (res.locals.user) {
         let user_have = (await res.locals.user.getGroups()).map(x => x.id);
         let user_has = await user_have.toString();
+        if (user_have.length == 0) user_has = 'NULL';
         sql += 'AND (EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))' +
                'OR NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id))';
       } else {

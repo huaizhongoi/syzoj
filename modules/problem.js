@@ -94,6 +94,7 @@ app.get('/problems/search', async (req, res) => {
       if (res.locals.user) {
         let user_have = (await res.locals.user.getGroups()).map(x => x.id);
         let user_has = await user_have.toString();
+        if (user_have.length == 0) user_has = 'NULL';
         query.where(new TypeORM.Brackets(qb => {
              qb.where('is_public = 1')
                  .orWhere('user_id = :user_id', { user_id: res.locals.user.id });
@@ -191,6 +192,7 @@ app.get('/problems/tag/:tagIDs', async (req, res) => {
       if (res.locals.user) {
         let user_have = (await res.locals.user.getGroups()).map(x => x.id);
         let user_has = await user_have.toString();
+        if (user_have.length == 0) user_has = 'NULL';
         sql += 'AND (`problem`.`is_public` = 1 OR `problem`.`user_id` = ' + res.locals.user.id + ')';
         sql += 'AND (EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))' +
                'OR NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id))';
