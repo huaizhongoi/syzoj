@@ -29,6 +29,21 @@ app.get('/', async (req, res) => {
       fortune = Divine(res.locals.user.username, res.locals.user.sex);
     }
 
+    let query = 'SELECT * FROM `contest` WHERE\n';
+    query += '`contest`.`is_public` = 1 ';
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
+      if (res.locals.user) {
+        let user_have = (await res.locals.user.getGroups()).map(x => x.id);
+        let user_has = await user_have.toString();
+        query += 'AND (EXISTS (SELECT * FROM contest_group_map WHERE contest_id = id and group_id in (' + user_has + '))' +
+               'OR NOT EXISTS (SELECT * FROM contest_group_map WHERE contest_id = id))';
+      } else {
+        query += 'AND NOT EXISTS (SELECT * FROM contest_group_map WHERE contest_id = id)';
+      }
+    }
+
+    let contests = await Problem.query(query + ` ORDER BY start_time DESC` + ` LIMIT 5`);
+
     let contests = await Contest.queryRange([1, 5], { is_public: true }, {
       start_time: 'DESC'
     });
@@ -39,7 +54,6 @@ app.get('/', async (req, res) => {
       if (res.locals.user) {
         let user_have = (await res.locals.user.getGroups()).map(x => x.id);
         let user_has = await user_have.toString();
-        if (user_have.length == 0) user_has = 'NULL';
         sql += 'AND (EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id and group_id in (' + user_has + '))' +
                'OR NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id))';
       } else {
