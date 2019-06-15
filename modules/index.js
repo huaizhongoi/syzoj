@@ -44,10 +44,6 @@ app.get('/', async (req, res) => {
 
     let contests = await Problem.query(query + ` ORDER BY start_time DESC` + ` LIMIT 5`);
 
-    let contests = await Contest.queryRange([1, 5], { is_public: true }, {
-      start_time: 'DESC'
-    });
-
     let sql = 'SELECT * FROM `problem` WHERE\n';
     sql += '`problem`.`is_public` = 1 ';
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
