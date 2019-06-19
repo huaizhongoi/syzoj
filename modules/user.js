@@ -308,7 +308,7 @@ app.get('/user/:id/group', async (req, res) => {
 
     res.render('user_group', {
       groups: Groups,
-      user: user
+      show_user: user
     });
   } catch (e) {
     syzoj.log(e);
