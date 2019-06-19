@@ -174,6 +174,7 @@ app.get('/submission/:id', async (req, res) => {
     if (!judge) throw new ErrorMessage("提交记录 ID 不正确。");
     const curUser = res.locals.user;
     if (!await judge.isAllowedVisitBy(curUser)) throw new ErrorMessage('您没有权限进行此操作。');
+    const problem = await Problem.findById(judge.problem_id);
 
     let contest;
     if (judge.type === 1) {
@@ -204,6 +205,7 @@ app.get('/submission/:id', async (req, res) => {
       judge.code = await syzoj.utils.highlight(judge.code, syzoj.languages[judge.language].highlight);
     }
 
+    displayConfig.showTestdata = await problem.isAllowedUseTestdataBy(res.locals.user);
     displayConfig.showRejudge = await judge.isAllowRejudgeBy(res.locals.user);
     res.render('submission', {
       info: getSubmissionInfo(judge, displayConfig),
