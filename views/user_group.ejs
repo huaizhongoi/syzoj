@@ -33,7 +33,7 @@
               <i class="remove icon"></i>
               否
             </div>
-            <a class="ui green ok inverted button remove_link" href-post="<%= syzoj.utils.makeUrl(['show_user', show_user.id, 'group', 'delete', groups[i].group_id]) %>">
+            <a class="ui green ok inverted button remove_link" href-post="<%= syzoj.utils.makeUrl(['user', show_user.id, 'group', 'delete', groups[i].group_id]) %>">
               <i class="checkmark icon"></i>
               是
             </a>
@@ -45,7 +45,7 @@
 </tbody>
 </table>
 
-<form class="ui form" action="<%= syzoj.utils.makeUrl(['show_user', show_user.id, 'group']) %>" method="post">
+<form class="ui form" action="<%= syzoj.utils.makeUrl(['user', show_user.id, 'group']) %>" method="post">
   <div class="two fields">
     <div class="field">
       <label>名称</label>
@@ -67,7 +67,7 @@
   <button type="submit" class="ui labeled submit blue icon button">
     <i class="icon edit"></i> 添加
   </button>
-  <a href="<%= syzoj.utils.makeUrl(['show_user', show_user.id]) %>" class="ui labeled icon button"><i class="ui angle left icon"></i>返回</a>
+  <a href="<%= syzoj.utils.makeUrl(['user', show_user.id]) %>" class="ui labeled icon button"><i class="ui angle left icon"></i>返回</a>
   </div>
 </form>
 <script>
