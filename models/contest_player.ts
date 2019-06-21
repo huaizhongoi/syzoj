@@ -37,7 +37,7 @@ export default class ContestPlayer extends Model {
 
   async loadRelationships() {
     this.user = await User.findById(this.user_id);
-    this.contest = await Contest.findById(this.contest_id);
+    this.contest = await Contest.findById(Math.abs(this.contest_id));
   }
 
   async updateScore(judge_state) {

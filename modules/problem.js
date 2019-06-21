@@ -780,7 +780,7 @@ app.post('/problem/:id/submit', app.multer.fields([{ name: 'answer', maxCount: 1
       if (!contest) throw new ErrorMessage('无此比赛。');
       if (!await contest.isAllowedUseBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
       if (!contest.is_public && (!res.locals.user || !(await contest.isAllowedManageBy(curUser)))) throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
-      if ((!contest.isRunning()) && (!await contest.isSupervisior(curUser))) throw new ErrorMessage('比赛未开始或已结束。');
+      if ((!contest.isRunning() || !contest.isEnded()) && (!await contest.isSupervisior(curUser))) throw new ErrorMessage('比赛未开始。');
       let problems_id = await contest.getProblems();
       if (!problems_id.includes(id)) throw new ErrorMessage('无此题目。');
 

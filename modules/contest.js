@@ -100,6 +100,7 @@ app.get('/contest/:id/edit', async (req, res) => {
       contest.id = 0;
     } else {
       if (!await contest.isAllowedManageBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
+      if (contest_id < 0) throw new ErrorMessage('错误的比赛编号！');
       await contest.loadRelationships();
     }
 
@@ -128,12 +129,17 @@ app.post('/contest/:id/edit', async (req, res) => {
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
     
     let ranklist = null;
+    let ranklist2 = null;
     if (!contest) {
+      if (contest_id < 0) throw new ErrorMessage('错误的比赛编号！');
       contest = await Contest.create();
 
       contest.holder_id = res.locals.user.id;
 
       ranklist = await ContestRanklist.create();
+      await ranklist.save();
+      ranklist2 = await ContestRanklist.create();
+      await ranklist2.save();
 
       // Only new contest can be set type
       if (!['noi', 'ioi', 'acm'].includes(req.body.type)) throw new ErrorMessage('无效的赛制。');
@@ -141,15 +147,20 @@ app.post('/contest/:id/edit', async (req, res) => {
     } else {
       await contest.loadRelationships();
       ranklist = contest.ranklist;
+      ranklist2 = contest.ranklist2;
     }
 
     try {
       ranklist.ranking_params = JSON.parse(req.body.ranking_params);
+      ranklist2.ranking_params = JSON.parse(req.body.ranking_params);
     } catch (e) {
       ranklist.ranking_params = {};
+      ranklist2.ranking_params = {};
     }
     await ranklist.save();
+    await ranklist2.save();
     contest.ranklist_id = ranklist.id;
+    contest.ranklist2_id = ranklist2.id;
 
     if (!req.body.title.trim()) throw new ErrorMessage('比赛名不能为空。');
     contest.title = req.body.title;
@@ -313,6 +324,68 @@ app.get('/contest/:id/ranklist', async (req, res) => {
         /*** XXX: Clumsy duplication, see ContestRanklist::updatePlayer() ***/
         if (contest.type === 'noi' || contest.type === 'ioi') {
           let multiplier = (contest.ranklist.ranking_params || {})[i] || 1.0;
+          player.score_details[i].weighted_score = player.score_details[i].score == null ? null : Math.round(player.score_details[i].score * multiplier);
+          player.score += player.score_details[i].weighted_score;
+        }
+      }
+
+      let user = await User.findById(player.user_id);
+
+      return {
+        user: user,
+        player: player
+      };
+    });
+
+    let problems_id = await contest.getProblems();
+    let problems = await problems_id.mapAsync(async id => await Problem.findById(id));
+
+    res.render('contest_ranklist', {
+      contest: contest,
+      ranklist: ranklist,
+      problems: problems,
+      show_realname: res.locals.user && (await res.locals.user.hasPrivilege('see_realname'))
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.get('/contest/:id/ranklist2', async (req, res) => {
+  try {
+    let contest_id = parseInt(req.params.id);
+    let contest = await Contest.findById(contest_id);
+    const curUser = res.locals.user;
+
+    if (!contest) throw new ErrorMessage('无此比赛。');
+    if (!await contest.isAllowedUseBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
+    if (!contest.is_public && (!res.locals.user || !(await contest.isAllowedManageBy(curUser)))) throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
+    if ([contest.allowedSeeingResult() && contest.allowedSeeingOthers(),
+    contest.isEnded(),
+    await contest.isAllowedManageBy(curUser)].every(x => !x))
+      throw new ErrorMessage('您没有权限进行此操作。');
+
+    await contest.loadRelationships();
+
+    let players_id = [];
+    for (let i = 1; i <= contest.ranklist2.ranklist.player_num; i++) players_id.push(contest.ranklist2.ranklist[i]);
+
+    let ranklist = await players_id.mapAsync(async player_id => {
+      let player = await ContestPlayer.findById(player_id);
+
+      if (contest.type === 'noi' || contest.type === 'ioi') {
+        player.score = 0;
+      }
+
+      for (let i in player.score_details) {
+        player.score_details[i].judge_state = await JudgeState.findById(player.score_details[i].judge_id);
+
+        /*** XXX: Clumsy duplication, see ContestRanklist::updatePlayer() ***/
+        if (contest.type === 'noi' || contest.type === 'ioi') {
+          let multiplier = (contest.ranklist2.ranking_params || {})[i] || 1.0;
           player.score_details[i].weighted_score = player.score_details[i].score == null ? null : Math.round(player.score_details[i].score * multiplier);
           player.score += player.score_details[i].weighted_score;
         }

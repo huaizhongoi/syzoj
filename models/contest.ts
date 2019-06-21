@@ -56,6 +56,10 @@ export default class Contest extends Model {
   @TypeORM.Column({ nullable: true, type: "integer" })
   ranklist_id: number;
 
+  @TypeORM.Index()
+  @TypeORM.Column({ nullable: true, type: "integer" })
+  ranklist2_id: number;
+
   @TypeORM.Column({ nullable: true, type: "boolean" })
   is_public: boolean;
 
@@ -64,10 +68,20 @@ export default class Contest extends Model {
 
   holder?: User;
   ranklist?: ContestRanklist;
+  ranklist2?: ContestRanklist;
 
   async loadRelationships() {
     this.holder = await User.findById(this.holder_id);
     this.ranklist = await ContestRanklist.findById(this.ranklist_id);
+    this.ranklist2 = await ContestRanklist.findById(this.ranklist2_id);
+    if (!this.ranklist2) {
+      let ranklist2 = await ContestRanklist.create({
+        ranking_params: this.ranklist.ranking_params,
+        ranklist: this.ranklist.ranklist
+      });
+      await ranklist2.save();
+      this.ranklist2 = ranklist2;
+    }
   }
 
   async isSupervisior(user) {
@@ -114,32 +128,53 @@ export default class Contest extends Model {
   }
 
   async newSubmission(judge_state) {
-    if (!(judge_state.submit_time >= this.start_time && judge_state.submit_time <= this.end_time)) {
+    if (!(judge_state.submit_time >= this.start_time)) {
       return;
     }
     let problems = await this.getProblems();
     if (!problems.includes(judge_state.problem_id)) throw new ErrorMessage('当前比赛中无此题目。');
 
     await syzoj.utils.lock(['Contest::newSubmission', judge_state.user_id], async () => {
-      let player = await ContestPlayer.findInContest({
-        contest_id: this.id,
-        user_id: judge_state.user_id
-      });
-
-      if (!player) {
-        player = await ContestPlayer.create({
+      if (await this.isRunning()) {
+        let player = await ContestPlayer.findInContest({
           contest_id: this.id,
           user_id: judge_state.user_id
         });
+
+        if (!player) {
+          player = await ContestPlayer.create({
+            contest_id: this.id,
+            user_id: judge_state.user_id
+          });
+          await player.save();
+        }
+
+        await player.updateScore(judge_state);
         await player.save();
+
+        await this.loadRelationships();
+        await this.ranklist.updatePlayer(this, player);
+        await this.ranklist.save();
+      }
+      let player2 = await ContestPlayer.findInContest({
+        contest_id: -this.id,
+        user_id: judge_state.user_id
+      });
+
+      if (!player2) {
+        player2 = await ContestPlayer.create({
+          contest_id: -this.id,
+          user_id: judge_state.user_id
+        });
+        await player2.save();
       }
 
-      await player.updateScore(judge_state);
-      await player.save();
+      await player2.updateScore(judge_state);
+      await player2.save();
 
       await this.loadRelationships();
-      await this.ranklist.updatePlayer(this, player);
-      await this.ranklist.save();
+      await this.ranklist2.updatePlayer(this, player2);
+      await this.ranklist2.save();
     });
   }
 
