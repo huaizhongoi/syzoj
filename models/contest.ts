@@ -79,10 +79,8 @@ export default class Contest extends Model {
         ranking_params: this.ranklist.ranking_params,
         ranklist: this.ranklist.ranklist
       });
-      let players = await ContestPlayer.find({
-        contest_id: this.id
-      });
-      for (let player of players) {
+      for (let i = 1; i <= ranklist2.ranklist.player_num; i++) {
+        let player = await ContestPlayer.findById(ranklist2.ranklist[i]);
         let new_player = await ContestPlayer.create({
           contest_id: -this.id,
           user_id: player.user_id,
@@ -90,9 +88,10 @@ export default class Contest extends Model {
           score_details: player.score_details,
           time_spent: player.time_spent
         });
-        new_player.save();
-        ranklist2.ranklist[new_player.user_id] = new_player.id;
+        await new_player.save();
+        ranklist2.ranklist[i] = new_player.id;
       }
+      await ranklist2.save();
       this.ranklist2 = ranklist2;
       this.ranklist2_id = ranklist2.id;
       await this.save();
