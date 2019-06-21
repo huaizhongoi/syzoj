@@ -81,6 +81,7 @@ export default class Contest extends Model {
       });
       await ranklist2.save();
       this.ranklist2 = ranklist2;
+      this.ranklist2_id = ranklist2.id;
     }
   }
 
