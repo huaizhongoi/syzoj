@@ -5,6 +5,7 @@ let Contest = syzoj.model('contest');
 let ProblemTag = syzoj.model('problem_tag');
 let Group = syzoj.model('group');
 let Article = syzoj.model('article');
+let User = syzoj.model('user');
 
 const randomstring = require('randomstring');
 const fs = require('fs-extra');
@@ -763,6 +764,13 @@ app.post('/problem/:id/submit', app.multer.fields([{ name: 'answer', maxCount: 1
         problem_id: id,
         is_public: problem.is_public
       });
+
+      if (typeof req.body.is_std != 'undefined' && req.body.is_std) {
+        if (!await problem.isAllowedEditBy(curUser)) throw new ErrorMessage('您没有权限进行此操作。');
+        let stdUser = await User.fromName('std');
+        if (!stdUser) throw new ErrorMessage('请创立 std 账户。');
+        judge_state.user_id = stdUser.id;
+      }
     }
 
     let contest_id = parseInt(req.query.contest_id);
