@@ -79,9 +79,6 @@ export default class Contest extends Model {
         ranking_params: this.ranklist.ranking_params,
         ranklist: this.ranklist.ranklist
       });
-      await ranklist2.save();
-      this.ranklist2 = ranklist2;
-      this.ranklist2_id = ranklist2.id;
       let players = await ContestPlayer.find({
         contest_id: this.id
       });
@@ -94,7 +91,10 @@ export default class Contest extends Model {
           time_spent: player.time_spent
         });
         new_player.save();
+        ranklist2.ranklist[new_player.user_id] = new_player.id;
       }
+      this.ranklist2 = ranklist2;
+      this.ranklist2_id = ranklist2.id;
       await this.save();
     }
   }
