@@ -163,6 +163,10 @@ export default class JudgeState extends Model {
       }
 
       await Promise.all(promises);
+      if (this.type_info !== 0) {
+        let contest = await Contest.findById(this.type_info);
+        await contest.newSubmission(this);
+      }
     } else if (this.type === 1) {
       let contest = await Contest.findById(this.type_info);
       await contest.newSubmission(this);
