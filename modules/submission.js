@@ -51,7 +51,7 @@ app.get('/submissions', async (req, res) => {
       if ((contest.ended && contest.is_public) || // If the contest is ended and is not hidden
         (curUser && await contest.isAllowedManageBy(curUser)) // Or if the user have the permission to check
       ) {
-        query.andWhere('type = 1');
+        if (!contest.ended) query.andWhere('type = 1');
         query.andWhere('type_info = :type_info', { type_info: contestId });
         inContest = true;
       } else {

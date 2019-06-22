@@ -115,10 +115,7 @@ app.get('/problems/search', async (req, res) => {
                qb.where('title LIKE :title', { title: `%${req.query.keyword}%` })
                  .orWhere('id = :id', { id: id })
              }))
-             .andWhere(new TypeORM.Brackets(qb => {
-                qb.orWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)')
-                  .orWhere('user_id = :user_id', { user_id: res.locals.user.id })
-            }));
+             .andWhere('NOT EXISTS (SELECT * FROM problem_group_map WHERE problem_id = id)');
       }
     } else {
       query.where('title LIKE :title', { title: `%${req.query.keyword}%` })
@@ -765,7 +762,7 @@ app.post('/problem/:id/submit', app.multer.fields([{ name: 'answer', maxCount: 1
         is_public: problem.is_public
       });
 
-      if (typeof req.body.is_std != 'undefined' && req.body.is_std) {
+      if (typeof req.body.is_std != 'undefined' && req.body.is_std === 'on') {
         if (!await problem.isAllowedEditBy(curUser)) throw new ErrorMessage('您没有权限进行此操作。');
         let stdUser = await User.fromName('std');
         if (!stdUser) throw new ErrorMessage('请创立 std 账户。');
@@ -784,7 +781,8 @@ app.post('/problem/:id/submit', app.multer.fields([{ name: 'answer', maxCount: 1
       let problems_id = await contest.getProblems();
       if (!problems_id.includes(id)) throw new ErrorMessage('无此题目。');
 
-      judge_state.type = 1;
+      if (contest.isRunning()) judge_state.type = 1;
+      else judge_state.type = 0;
       judge_state.type_info = contest_id;
 
       await judge_state.save();

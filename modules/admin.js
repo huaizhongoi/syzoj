@@ -197,22 +197,31 @@ app.post('/admin/rating/add', async (req, res) => {
     if (!contest) throw new ErrorMessage('无此比赛');
 
     await contest.loadRelationships();
-    const newcalc = await RatingCalculation.create({ contest_id: contest.id });
-    await newcalc.save();
-
     if (!contest.ranklist || contest.ranklist.ranklist.player_num <= 1) {
       throw new ErrorMessage("比赛人数太少。");
     }
-
+    
     const players = [];
+    let real_num = 0;
     for (let i = 1; i <= contest.ranklist.ranklist.player_num; i++) {
       const user = await User.findById((await ContestPlayer.findById(contest.ranklist.ranklist[i])).user_id);
+      if (await contest.isAllowedManageBy(user)) continue;
+      real_num++;
       players.push({
         user: user,
-        rank: i,
+        rank: real_num,
         currentRating: user.rating
       });
     }
+
+    if (!contest.ranklist || real_num <= 1) {
+      throw new ErrorMessage("比赛人数太少。");
+    }
+
+    await contest.loadRelationships();
+    const newcalc = await RatingCalculation.create({ contest_id: contest.id });
+    await newcalc.save();
+
     const newRating = calcRating(players);
     for (let i = 0; i < newRating.length; i++) {
       const user = newRating[i].user;

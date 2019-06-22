@@ -98,6 +98,7 @@ app.get('/contest/:id/edit', async (req, res) => {
       if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) throw new ErrorMessage('您没有权限进行此操作。');
       contest = await Contest.create();
       contest.id = 0;
+      contest.read_rating = true;
     } else {
       if (!await contest.isAllowedManageBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
       if (contest_id < 0) throw new ErrorMessage('错误的比赛编号！');
@@ -174,6 +175,7 @@ app.post('/contest/:id/edit', async (req, res) => {
     contest.end_time = syzoj.utils.parseDate(req.body.end_time);
     contest.is_public = req.body.is_public === 'on';
     contest.hide_statistics = req.body.hide_statistics === 'on';
+    contest.read_rating = req.body.read_rating === 'on';
 
     await contest.save();
 
@@ -622,6 +624,7 @@ app.get('/contest/:id/problem/:pid', async (req, res) => {
     const curUser = res.locals.user;
 
     if (!contest) throw new ErrorMessage('无此比赛。');
+    if (contest.read_rating && !res.locals.user) throw new ErrorMessage('请先登录');
     if (!await contest.isAllowedUseBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
     if (!contest.is_public && (!res.locals.user || !(await contest.isAllowedManageBy(curUser)))) throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
 
@@ -640,6 +643,36 @@ app.get('/contest/:id/problem/:pid', async (req, res) => {
         return res.redirect(syzoj.utils.makeUrl(['problem', problem_id]));
       }
       throw new ErrorMessage('比赛尚未开始。');
+    }
+
+    if (contest.read_rating && contest.isRunning() && !await contest.isAllowedManageBy(curUser)) {
+      await contest.loadRelationships();
+      let player = await ContestPlayer.findInContest({
+        contest_id: contest.id,
+        user_id: curUser.id
+      });
+      if (!player) {
+        player = await ContestPlayer.create({
+          contest_id: contest.id,
+          user_id: curUser.id
+        });
+        await player.save();
+        await contest.ranklist.updatePlayer(contest, player);
+        await contest.ranklist.save();
+      }
+      let player2 = await ContestPlayer.findInContest({
+        contest_id: -contest.id,
+        user_id: curUser.id
+      });
+      if (!player2) {
+        player2 = await ContestPlayer.create({
+          contest_id: -contest.id,
+          user_id: curUser.id
+        });
+        await player2.save();
+        await contest.ranklist2.updatePlayer(contest, player2);
+        await contest.ranklist2.save();
+      }
     }
 
     problem.specialJudge = await problem.hasSpecialJudge();
