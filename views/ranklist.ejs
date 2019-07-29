@@ -40,7 +40,7 @@ else this.title = group.name + ' - 排名';
 	            <th style="width: 100px; "><%- createSortableTitle('rating', '积分', false) %></th>
 	        </tr>
 	        </thead>
-          <script>
+          <script data-cfasync="false">
           var lineHeight = 0;
           (function () {
             var div = document.createElement('div');
@@ -74,7 +74,7 @@ else this.title = group.name + ' - 排名';
                 <td><%= user.level %></td>
               <% } %>
               <td>
-              <script id="user-infomation-script-<%= i %>">
+              <script id="user-infomation-script-<%= i %>" data-cfasync="false">
               (function () {
                 var html = <%- serializejs(user.information) %>;
                 var elem = document.createElement('div');
