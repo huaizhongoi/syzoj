@@ -207,6 +207,21 @@ app.get('/submission/:id', async (req, res) => {
 
     displayConfig.showTestdata = await problem.isAllowedUseTestdataBy(res.locals.user);
     displayConfig.showRejudge = await judge.isAllowRejudgeBy(res.locals.user);
+
+    if (judge.type_info != 0 && judge.type_info != null) {
+	  contest = await Contest.findById(judge.type_info);
+      contest.ended = contest.isEnded();
+
+	  
+      if (contest.isAllowedManageBy(curUser) || (contest.is_end && contest.is_public && contest.isAllowedUseBy(curUser))) {
+        displayConfig.inContest = true; 
+        await judge.loadRelationships();
+        const problems_id = await contest.getProblems();
+        judge.problem_id = problems_id.indexOf(judge.problem_id) + 1;
+        judge.problem.title = syzoj.utils.removeTitleTag(judge.problem.title);
+      }
+    }
+
     res.render('submission', {
       info: getSubmissionInfo(judge, displayConfig),
       roughResult: getRoughResult(judge, displayConfig, false),
@@ -220,6 +235,7 @@ app.get('/submission/:id', async (req, res) => {
         displayConfig: displayConfig
       }, syzoj.config.session_secret) : null,
       displayConfig: displayConfig,
+      contest: contest
     });
   } catch (e) {
     syzoj.log(e);
