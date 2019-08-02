@@ -207,6 +207,7 @@ app.get('/submission/:id', async (req, res) => {
 
     displayConfig.showTestdata = await problem.isAllowedUseTestdataBy(res.locals.user);
     displayConfig.showRejudge = await judge.isAllowRejudgeBy(res.locals.user);
+	displayConfig.inContest = false;
 
     if (judge.type_info != 0 && judge.type_info != null) {
 	  contest = await Contest.findById(judge.type_info);
