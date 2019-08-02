@@ -137,6 +137,8 @@ app.get('/submissions', async (req, res) => {
       judge_state = await JudgeState.queryPage(paginate, query, { id: "DESC" }, true);
     }
 
+	displayConfig.inContest = false;
+
     await judge_state.forEachAsync(async obj => {
       await obj.loadRelationships();
     });
