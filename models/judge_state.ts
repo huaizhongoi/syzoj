@@ -144,7 +144,7 @@ export default class JudgeState extends Model {
     else if (this.type === 1) {
       let contest = await Contest.findById(this.type_info);
       if (!contest) throw new ErrorMessage('无此比赛。');
-      if (!await contest.isAllowedManageBy(user)) return false;
+      if (!await contest.isAllowedManageBy(user)) return contest.isEnded() && (await this.problem.isAllowedEditBy(user));
       if (!contest.is_public && (!user || !(await contest.isAllowedManageBy(user)))) return false;
       if (contest.isRunning()) {
         return user && await contest.isAllowedManageBy(user);
