@@ -629,13 +629,13 @@ export default class Problem extends Model {
       if (flag) {
         await contest.setProblemsNoCheck(problemIDs);
         await contest.save();
-		let rk1 = await ContestRanklist.find(where: {contest_id: contest.id});
+		let rk1 = await ContestRanklist.find({where: {contest_id: contest.id}});
 		for (let rk of rk1) {
           rk[id] = rk[this.id];
 		  delete rk[this.id];
 		  await rk.save();
 		}
-		let rk2 = await ContestRanklist.find(where: {contest_id: -contest.id});
+		let rk2 = await ContestRanklist.find({where: {contest_id: -contest.id}});
 		for (let rk of rk2) {
           rk[id] = rk[this.id];
 		  delete rk[this.id];
