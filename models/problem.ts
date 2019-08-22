@@ -11,7 +11,7 @@ import ProblemTag from "./problem_tag";
 import ProblemTagMap from "./problem_tag_map";
 import Group from "./group";
 import ProblemGroupMap from "./problem_group_map";
-import ContestRanklist from "./contest_ranklist";
+import ContestPlayer from "./contest_player";
 import SubmissionStatistics, { StatisticsType } from "./submission_statistics";
 
 import * as fs from "fs-extra";
@@ -630,16 +630,16 @@ export default class Problem extends Model {
       if (flag) {
         await contest.setProblemsNoCheck(problemIDs);
         await contest.save();
-		let rk1 = await ContestRanklist.find({where: {contest_id: contest.id}});
+		let rk1 = await ContestPlayer.find({where: {contest_id: contest.id}});
 		for (let rk of rk1) {
-          rk.ranklist[id] = rk.ranklist[this.id];
-		  delete rk.ranklist[this.id];
+          rk.score_details[id] = rk.score_details[this.id];
+		  delete rk.score_details[this.id];
 		  await rk.save();
 		}
 		let rk2 = await ContestRanklist.find({where: {contest_id: -contest.id}});
 		for (let rk of rk2) {
-          rk.ranklist[id] = rk.ranklist[this.id];
-		  delete rk.ranklist[this.id];
+          rk.score_details[id] = rk.score_details[this.id];
+		  delete rk.score_details[this.id];
 		  await rk.save();
 		}
       }	
