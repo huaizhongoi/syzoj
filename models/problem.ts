@@ -636,7 +636,7 @@ export default class Problem extends Model {
 		  delete rk.score_details[this.id];
 		  await rk.save();
 		}
-		let rk2 = await ContestRanklist.find({where: {contest_id: -contest.id}});
+		let rk2 = await ContestPlayer.find({where: {contest_id: -contest.id}});
 		for (let rk of rk2) {
           rk.score_details[id] = rk.score_details[this.id];
 		  delete rk.score_details[this.id];
