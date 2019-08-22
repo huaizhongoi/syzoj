@@ -383,6 +383,7 @@ app.get('/contest/:id/ranklist2', async (req, res) => {
       }
 
       for (let i in player.score_details) {
+		if (typeof player.score_details[i].judge_id == 'undefined') continue;
         player.score_details[i].judge_state = await JudgeState.findById(player.score_details[i].judge_id);
 
         /*** XXX: Clumsy duplication, see ContestRanklist::updatePlayer() ***/
