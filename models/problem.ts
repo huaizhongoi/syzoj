@@ -11,6 +11,7 @@ import ProblemTag from "./problem_tag";
 import ProblemTagMap from "./problem_tag_map";
 import Group from "./group";
 import ProblemGroupMap from "./problem_group_map";
+import ContestRanklist from "./contest_ranklist";
 import SubmissionStatistics, { StatisticsType } from "./submission_statistics";
 
 import * as fs from "fs-extra";
