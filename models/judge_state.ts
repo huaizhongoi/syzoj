@@ -122,8 +122,8 @@ export default class JudgeState extends Model {
     await this.loadRelationships();
 
     if (user && user.id === this.problem.user_id) return true;
-    else if (this.type === 0) return this.problem.isAllowedUseBy(user);
-    else if (this.type === 1) {
+    else if (this.type === 0 && (this.type_info === 0 || this.type_info === null)) return this.problem.isAllowedUseBy(user);
+    else if (this.type === 1 || (this.type_info != 0 && this.type_info != null)) {
       let contest = await Contest.findById(this.type_info);
       if (!contest) throw new ErrorMessage('无此比赛。');
       if (!await contest.isAllowedUseBy(user)) return false;
@@ -144,7 +144,7 @@ export default class JudgeState extends Model {
     else if (this.type === 1) {
       let contest = await Contest.findById(this.type_info);
       if (!contest) throw new ErrorMessage('无此比赛。');
-      if (!await contest.isAllowedManageBy(user)) return false;
+      if (!await contest.isAllowedManageBy(user)) return contest.isEnded() && (await this.problem.isAllowedEditBy(user));
       if (!contest.is_public && (!user || !(await contest.isAllowedManageBy(user)))) return false;
       if (contest.isRunning()) {
         return user && await contest.isAllowedManageBy(user);

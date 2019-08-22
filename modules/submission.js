@@ -216,7 +216,7 @@ app.get('/submission/:id', async (req, res) => {
       contest.ended = contest.isEnded();
 
 	  
-      if (contest.isAllowedManageBy(curUser) || (contest.is_end && contest.is_public && contest.isAllowedUseBy(curUser))) {
+      if ((await contest.isAllowedManageBy(curUser)) || (contest.ended && contest.is_public && (await contest.isAllowedUseBy(curUser)))) {
         displayConfig.inContest = true; 
         await judge.loadRelationships();
         const problems_id = await contest.getProblems();
