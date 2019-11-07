@@ -59,6 +59,9 @@ export default class User extends Model {
   @TypeORM.Column({ nullable: true, type: "boolean", default: true })
   prefer_formatted_code: boolean;
 
+  @TypeORM.Column({ nullable: true, type: "boolean", default: false })
+  disable_login: boolean;
+
   @TypeORM.Column({ nullable: true, type: "integer" })
   sex: number;
 

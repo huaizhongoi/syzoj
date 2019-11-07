@@ -97,11 +97,16 @@
           <input <% if (!allowedManagePrivilege) { %>disabled="disabled" <% } %>type="checkbox"<% if (edited_user.privileges.includes('see_realname')) { %> checked<% } %>>
           <label>查看实名</label>
         </div>
-        <div class="ui toggle <% if (!allowedManagePrivilege) { %>disabled <% } %>checkbox checkbox_privilege" data-name="disable_login">
-          <input <% if (!allowedManagePrivilege) { %>disabled="disabled" <% } %>type="checkbox"<% if (edited_user.privileges.includes('disable_login')) { %> checked<% } %>>
-          <label>禁止进入主站</label>
-        </div>
       </div>
+      <% if (edited_user.allowedManagePrivilege) { %>
+        <div class="inline field">
+          <label class="ui header">禁止进入主站</label>
+          <div class="ui toggle checkbox">
+            <input id="disable_login" name="disable_login" type="checkbox" <% if (edited_user.disable_login) { %> checked<% } %>>
+            <label>　</label>
+          </div>
+        </div>
+      <% } %>
       <div style="text-align: center; margin-top: 30px; ">
         <button id="submit_button" type="submit" class="ui disabled blue labeled icon button"><i class="ui icon edit"></i>修改</button>
         <a href="<%= syzoj.utils.makeUrl(['user', edited_user.id]) %>" class="ui labeled icon button"><i class="ui icon angle left"></i>返回</a>

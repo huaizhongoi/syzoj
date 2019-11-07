@@ -220,7 +220,7 @@ global.syzoj = {
       if (req.session.user_id) {
         try {
           User.findById(req.session.user_id).then((user) => {
-            if (!user || await user.hasPrivilege('disable_login')) throw null;
+            if (!user || user.disable_login) throw null;
             res.locals.user = user;
             next();
           }).catch((err) => {
@@ -245,7 +245,7 @@ global.syzoj = {
                 password: obj[1]
               }
             }).then(user => {
-              if (!user || await user.hasPrivilege('disable_login')) throw null;
+              if (!user || user.disable_login) throw null;
               res.locals.user = user;
               req.session.user_id = user.id;
               next();

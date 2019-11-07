@@ -266,6 +266,8 @@ app.post('/user/:id/edit', async (req, res) => {
     user.public_email = (req.body.public_email === 'on');
     user.prefer_formatted_code = (req.body.prefer_formatted_code === 'on');
 
+    if (res.locals.user && await res.locals.user.hasPrivilege('disable_login')) user.disable_login = req.body.disable_login.trim();
+
     await user.save();
 
     if (user.id === res.locals.user.id) res.locals.user = user;
