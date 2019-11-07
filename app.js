@@ -218,15 +218,22 @@ global.syzoj = {
 
       let User = syzoj.model('user');
       if (req.session.user_id) {
-        User.findById(req.session.user_id).then((user) => {
-          res.locals.user = user;
-          next();
-        }).catch((err) => {
-          this.log(err);
+        try {
+          User.findById(req.session.user_id).then((user) => {
+            if (!user || await user.hasPrivilege('disable_login')) throw null;
+            res.locals.user = user;
+            next();
+          }).catch((err) => {
+            this.log(err);
+            res.locals.user = null;
+            req.session.user_id = null;
+            next();
+          });
+        } catch (e) {
           res.locals.user = null;
           req.session.user_id = null;
           next();
-        });
+        }
       } else {
         if (req.cookies.login) {
           let obj;
@@ -238,7 +245,7 @@ global.syzoj = {
                 password: obj[1]
               }
             }).then(user => {
-              if (!user) throw null;
+              if (!user || await user.hasPrivilege('disable_login')) throw null;
               res.locals.user = user;
               req.session.user_id = user.id;
               next();
