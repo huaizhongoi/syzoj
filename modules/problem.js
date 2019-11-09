@@ -914,8 +914,9 @@ app.post('/problem/:id/testdata/delete/:filename', async (req, res) => {
     let problem = await Problem.findById(id);
 
     if (!problem) throw new ErrorMessage('无此题目。');
-    if (!await problem.isAllowedUseTestdataBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
-
+    if (!await problem.isAllowedEditBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
+    if (typeof req.params.filename === 'string' && (req.params.filename.includes('../'))) throw new ErrorMessage('您没有权限进行此操作。)');
+    
     await problem.deleteTestdataSingleFile(req.params.filename);
 
     res.redirect(syzoj.utils.makeUrl(['problem', id, 'testdata']));
@@ -948,6 +949,7 @@ app.get('/problem/:id/testdata/download/:filename?', async (req, res) => {
 
     if (!problem) throw new ErrorMessage('无此题目。');
     if (!await problem.isAllowedUseTestdataBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
+    if (typeof req.params.filename === 'string' && (req.params.filename.includes('../'))) throw new ErrorMessage('您没有权限进行此操作。)');
 
     if (!req.params.filename) {
       if (!await syzoj.utils.isFile(problem.getTestdataArchivePath())) {
