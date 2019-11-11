@@ -266,8 +266,8 @@ app.post('/user/:id/edit', async (req, res) => {
     user.public_email = (req.body.public_email === 'on');
     user.prefer_formatted_code = (req.body.prefer_formatted_code === 'on');
 
-    if (res.locals.user && await res.locals.user.hasPrivilege('disable_login')) {
-      if (user.is_admin || await user.hasPrivilege('manage_user') || await user.hasPrivilege('manage_problem')) throw new ErrorMessage('不能封禁有管理权限的用户');
+    if (res.locals.user && await res.locals.user.hasPrivilege('manage_user')) {
+      if (req.body.disable_login == 'on' && (user.is_admin || await user.hasPrivilege('manage_user') || await user.hasPrivilege('manage_problem'))) throw new ErrorMessage('不能封禁有管理权限的用户');
       user.disable_login = (req.body.disable_login == 'on');
     }
 
