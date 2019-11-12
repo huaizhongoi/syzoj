@@ -221,6 +221,8 @@ global.syzoj = {
         try {
           User.findById(req.session.user_id).then((user) => {
             if (!user || user.disable_login) throw null;
+            user.id_address = req.headers['x-real-ip'];
+            await user.save();
             res.locals.user = user;
             next();
           }).catch((err) => {
@@ -246,6 +248,8 @@ global.syzoj = {
               }
             }).then(user => {
               if (!user || user.disable_login) throw null;
+              user.id_address = req.headers['x-real-ip'];
+              await user.save();
               res.locals.user = user;
               req.session.user_id = user.id;
               next();
