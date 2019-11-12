@@ -115,6 +115,8 @@
                                            <div class="ui bottom attached segment"><%= show_user.ip_address %></div>
                                         </div>
                                     </div>
+                                    <% } %>
+                                    <% if (show_user.last_seeing && show_user.allowedManaged) { %>
                                     <div class="row">
                                         <div class="column">
                                             <h4 class="ui top attached block header">上次访问</h4>
