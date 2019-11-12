@@ -202,23 +202,13 @@ app.post('/admin/rating/add', async (req, res) => {
     }
     
     const players = [];
-    let real_num = 0, real_rank = 0, last_score = 0;
     for (let i = 1; i <= contest.ranklist.ranklist.player_num; i++) {
-      const player = (await ContestPlayer.findById(contest.ranklist.ranklist[i]));
-      const user = await User.findById(player.user_id);
-      if (await contest.isAllowedManageBy(user)) continue;
-      real_num++;
-      if (contest.type != 'noi' || real_num == 1 || player.score != last_score) real_rank = real_num;
-      last_score = player.score;
+      const user = await User.findById((await ContestPlayer.findById(contest.ranklist.ranklist[i])).user_id);
       players.push({
         user: user,
-        rank: real_rank,
+        rank: i,
         currentRating: user.rating
       });
-    }
-
-    if (!contest.ranklist || real_num <= 1) {
-      throw new ErrorMessage("比赛人数太少。");
     }
 
     await contest.loadRelationships();
