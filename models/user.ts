@@ -74,6 +74,9 @@ export default class User extends Model {
   @TypeORM.Column({ nullable: true, type: "text" })
   ip_address: string;
 
+  @TypeORM.Column({ nullable: true, type: "integer" })
+  last_seeing: number;
+
   static async fromEmail(email): Promise<User> {
     return User.findOne({
       where: {
