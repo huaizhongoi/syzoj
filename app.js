@@ -219,9 +219,9 @@ global.syzoj = {
       let User = syzoj.model('user');
       if (req.session.user_id) {
         try {
-          User.findById(req.session.user_id).then((user) => {
+          User.findById(req.session.user_id).then(async (user) => {
             if (!user || user.disable_login) throw null;
-            user.id_address = req.headers['x-real-ip'];
+            user.ip_address = req.headers['x-real-ip'];
             await user.save();
             res.locals.user = user;
             next();
@@ -246,9 +246,9 @@ global.syzoj = {
                 username: obj[0],
                 password: obj[1]
               }
-            }).then(user => {
+            }).then(async user => {
               if (!user || user.disable_login) throw null;
-              user.id_address = req.headers['x-real-ip'];
+              user.ip_address = req.headers['x-real-ip'];
               await user.save();
               res.locals.user = user;
               req.session.user_id = user.id;
