@@ -133,8 +133,10 @@ app.get('/user/:id', async (req, res) => {
     user.ac_problems = await user.getACProblems();
     user.articles = await user.getArticles();
     user.allowedEdit = await user.isAllowedEditBy(res.locals.user);
-    user.allowedManaged = await res.locals.user.hasPrivilege('manage_user');
-    if (res.locals.user) user.allowedEditGroup = await res.locals.user.hasPrivilege('manage_problem');
+    if (res.locals.user) {
+      user.allowedEditGroup = await res.locals.user.hasPrivilege('manage_problem');
+      user.allowedManaged = await res.locals.user.hasPrivilege('manage_user');
+    }
     else user.allowedEditGroup = false;
 
     let statistics = await user.getStatistics();
