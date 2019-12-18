@@ -39,8 +39,6 @@ app.get('/discussion/:type?', async (req, res) => {
       sort_time: 'DESC'
     });
 
-    console.log(articles);
-
     for (let article of articles) {
       await article.loadRelationships();
       if (in_problems) {
