@@ -1,24 +1,24 @@
-<% this.title = '排名 - ' + contest.title %>
-<% include header %>
-<style>
-.submit_time {
-  font-size: 0.8em;
-  margin-top: 5px;
-  color: #000;
-}
-</style>
-<div class="padding">
-<h1 class="ui center aligned header" style="margin-bottom: 30px; "><%= contest.title %></h1>
-        <table class="ui very basic center aligned table">
-            <thead>
-            <tr>
-                <th>#</th>
-                <th>用户名</th>
-                <% if (contest.type === 'acm') { %>
-                  <th>通过数量</th>
-                  <th>罚时</th>
-                <% } %>
-                <% for (let i = 0; i < problems.length; i++) { %>
+<% this.title = '排名 - ' + contest.title %>                                                                                                                                                                         
+<% include header %>                                                                                                                                                                                                 
+<style>                                                                                                                                                                                                              
+.submit_time {                                                                                                                                                                                                       
+  font-size: 0.8em;                                                                                                                                                                                                  
+  margin-top: 5px;                                                                                                                                                                                                   
+  color: #000;                                                                                                                                                                                                       
+}                                                                                                                                                                                                                    
+</style>                                                                                                                                                                                                             
+<div class="padding">                                                                                                                                                                                                
+<h1 class="ui center aligned header" style="margin-bottom: 30px; "><%= contest.title %></h1>                                                                                                                         
+        <table class="ui very basic center aligned table">                                                                                                                                                           
+            <thead>                                                                                                                                                                                                  
+            <tr>                                                                                                                                                                                                     
+                <th>#</th>                                                                                                                                                                                           
+                <th>用户名</th>                                                                                                                                                                                      
+                <% if (contest.type === 'acm') { %>                                                                                                                                                                  
+                  <th>通过数量</th>                                                                                                                                                                                  
+                  <th>罚时</th>                                                                                                                                                                                      
+                <% } %>                                                                                                                                                                                              
+                <% for (let i = 0; i < problems.length; i++) { %>                                                                                                                                                    
                 <th>
                   <a href="<%= syzoj.utils.makeUrl(['contest', contest.id, 'problem', i + 1]) %>">
                     <%= syzoj.utils.removeTitleTag(problems[i].title) %>
@@ -50,7 +50,7 @@
             let i = 0, rank = 0, lastItem;
             for (let item of ranklist) {
               i++;
-              let latest = contest.start_time, timeSum = 0, unacceptedCount = 0;
+              let latest = 0, timeSum = 0, unacceptedCount = 0;
             %>
             <tr>
                 <%
@@ -101,6 +101,7 @@
                     <%= syzoj.utils.formatTime(timeSum) %>
                   </td>
                 <% } %>
+                <% let submit_time_sum = 0 %>
                 <% for (let problem of problems) { %>
                   <% if (problem.min === i) { %>
                     <td style="background: rgb(244, 255, 245); ">
@@ -143,8 +144,12 @@
                         <% } %>
                       </a>
                       <div class="submit_time">
-                        <%= syzoj.utils.formatTime(item.player.score_details[problem.id].judge_state.submit_time - contest.start_time) %>
-                        <% latest = Math.max(latest, item.player.score_details[problem.id].judge_state.submit_time)  %>
+                        <!-- <%= syzoj.utils.formatTime(item.player.score_details[problem.id].judge_state.submit_time - contest.start_time) %> -->
+                        <!-- <%= syzoj.utils.formatTime(item.player.score_details[problem.id].judge_state.submit_time - contest.start_time) %> -->
+                        <!-- <% latest = Math.max(latest, item.player.score_details[problem.id].judge_state.submit_time)  %> -->
+                        <%= item.player.score_details[problem.id].judge_state.total_time %> ms
+                        <!-- let latest = latest + item.player.score_details[problem.id].judge_state.total_time -->
+                        <% submit_time_sum += item.player.score_details[problem.id].judge_state.total_time %>
                       </div>
                     </td>
                   <% } %>
@@ -155,7 +160,7 @@
                       <%= item.player.score %>
                     </span>
                     <div class="submit_time">
-                      <%= syzoj.utils.formatTime(latest - contest.start_time) %>
+                      <%= submit_time_sum %> ms <!-- 修改为显示运行时间 -->
                     </div>
                   </td>
                 <% } %>
