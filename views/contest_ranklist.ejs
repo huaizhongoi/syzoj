@@ -149,7 +149,9 @@
                         <!-- <% latest = Math.max(latest, item.player.score_details[problem.id].judge_state.submit_time)  %> -->
                         <%= item.player.score_details[problem.id].judge_state.total_time %> ms
                         <!-- let latest = latest + item.player.score_details[problem.id].judge_state.total_time -->
+                        <% if (item.player.score_details[problem.id].weighted_score != 0) { %>
                         <% submit_time_sum += item.player.score_details[problem.id].judge_state.total_time %>
+                        <% } %>
                       </div>
                     </td>
                   <% } %>
