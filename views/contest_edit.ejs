@@ -41,12 +41,12 @@
                   <label for="type-ioi">IOI</label>
                 </div>
               </div>
-              <div class="field">
+              <!-- <div class="field">
                 <div class="ui radio checkbox">
                   <input <% if (contest.id) { %>disabled <% } %>type="radio" name="type" id="type-acm" value="acm"<% if (contest.type === 'acm') { %> checked="checked"<% } %>>
                   <label for="type-acm">ICPC</label>
                 </div>
-              </div>
+              </div> ICPC 赛制在 IOI, NOI 赛制改为显示运行时间后貌似出了点问题，暂时禁用 ICPC 赛制（反正 HZOJ 也用不上）-->
             </div>
             <div class="field">
                 <label>排行参数（格式：<code>{ "题目 ID": 分值倍数 }</code>）</label>
