@@ -58,7 +58,7 @@ export default class ContestRanklist extends Model {
         players.sort((a, b) => {
             if (a.score > b.score) return -1;
             if (b.score > a.score) return 1;
-            Let asum = 0, bsum = 0;
+            let asum = 0, bsum = 0;
             for (let i in a.score_details) {
                 let judge_state = await JudgeState.findById(a.score_details[i].judge_id);
                 if (!judge_state) continue;
