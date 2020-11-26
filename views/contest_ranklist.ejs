@@ -70,15 +70,21 @@
                 %>
                 <td>
                   <% if (rank == 1) { %>
-                    <div class="ui yellow ribbon label">
+                    <div class="ui yellow ribbon label"> Au %>
                   <% } else if (rank == 2) { %>
-                    <div class="ui ribbon label">
+                    <div class="ui ribbon label"> Ag %>
                   <% } else if (rank == 3) { %>
-                    <div class="ui brown ribbon label" style="background-color: #C47222 !important;">
+                    <div class="ui brown ribbon label" style="background-color: #C47222 !important;"> Cu %>
                   <% } else { %>
                     <div>
                   <% } %>
-                  <%= rank %>
+                  <% if(rank !== 1) { %>
+                    <% if(rank !== 2) { %>
+                      <% if(rank !== 3) { %>
+                        <%= rank %>
+                      <% } %>
+                    <% } %>
+                  <% } %>
                   </div>
                 </td>
                 <td>
